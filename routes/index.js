@@ -1,1 +1,3 @@
-module.exports = {};
+const testRouter = require('./test');
+
+module.exports = { testRouter };
