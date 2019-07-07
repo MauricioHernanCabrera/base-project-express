@@ -10,11 +10,12 @@ function withErrorStack(err, stack) {
 }
 
 function logErrors(err, req, res, next) {
-  debug(err.stack);
+  console.log('log', err);
   next(err);
 }
 
 function wrapErrors(err, req, res, next) {
+  console.log('wrap', err);
   if (!err.isBoom) {
     next(boom.badImplementation(err));
   }

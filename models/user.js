@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 const { ObjectId } = Schema.Types;
+const uniqueValidator = require('mongoose-unique-validator');
+const handleUniqueValidator = require('./../utils/handleUniqueValidator');
 
 const UserSchema = Schema(
   {
@@ -13,6 +15,7 @@ const UserSchema = Schema(
       type: String,
       unique: true,
       index: true,
+      uniqueCaseInsensitive: true,
       required: true
     },
 
@@ -20,6 +23,7 @@ const UserSchema = Schema(
       type: String,
       unique: true,
       index: true,
+      uniqueCaseInsensitive: true,
       required: true
     },
 
@@ -60,4 +64,13 @@ const UserSchema = Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('Users', UserSchema);
+UserSchema.plugin(uniqueValidator, {
+  message:
+    'Lo siento, {VALUE} ya esta en uso, ¡por favor ingrese otro {PATH} y vuelva a intentarlo!'
+});
+
+UserSchema.post('save', handleUniqueValidator);
+
+const UserModel = mongoose.model('Users', UserSchema);
+
+module.exports = UserModel;
