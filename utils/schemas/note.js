@@ -12,6 +12,22 @@ const createNoteSchema = Joi.object().keys({
   subject: idSchema
 });
 
+const updateNoteSchema = Joi.object().keys({
+  title: Joi.string()
+    .allow('')
+    .optional(),
+  description: Joi.string()
+    .allow('')
+    .optional(),
+  googleFolderId: Joi.string()
+    .allow('')
+    .optional(),
+  codeNote: idSchema.optional(),
+  codeYear: idSchema.optional(),
+  subject: idSchema.optional()
+});
+
 module.exports = {
-  createNoteSchema
+  createNoteSchema,
+  updateNoteSchema
 };

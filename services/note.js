@@ -27,10 +27,29 @@ const createOne = async ({ data }) => {
   return noteCreated;
 };
 
+const deleteOne = ({ _id, user }) => {
+  return NoteModel.findOneAndUpdate(
+    { _id, isActive: true, owner: user._id },
+    { isActive: false }
+  ).orFail(boom.badRequest('¡Fallo al eliminar el apunte!'));
+};
+
+const updateOne = async ({ _id, user, data }) => {
+  if (data.codeNote) await CodeNoteService.getOne({ _id: data.codeNote });
+  if (data.codeYear) await CodeYearService.getOne({ _id: data.codeYear });
+  if (data.subject) await SubjectService.getOne({ _id: data.subject });
+
+  return NoteModel.findOneAndUpdate(
+    { _id, isActive: true, owner: user._id },
+    data,
+    { new: true }
+  ).orFail(boom.badRequest('¡Fallo al actualizar el apunte!'));
+};
+
 const getOne = async ({ _id, user = {} }) => {
   return new Promise(async (resolve, reject) => {
     const note = await NoteModel.aggregate([
-      { $match: { _id: mongoose.Types.ObjectId(_id) } }
+      { $match: { _id: mongoose.Types.ObjectId(_id), isActive: true } }
     ])
       .addFields({
         countFavorites: { $size: '$favorites' },
@@ -79,12 +98,14 @@ const getOne = async ({ _id, user = {} }) => {
   });
 };
 
-const getOnelight = ({ _id }) => {
-  return NoteModel.findById(_id).orFail(boom.notFound('¡No existe el apunte!'));
+const getOnelight = filter => {
+  return NoteModel.findOne(filter).orFail(
+    boom.notFound('¡No existe el apunte!')
+  );
 };
 
 const getAll = async ({ user = {}, page = 0, limit = 5 }) => {
-  const notes = await NoteModel.aggregate([{ $match: {} }])
+  const notes = await NoteModel.aggregate([{ $match: { isActive: true } }])
     .skip(page == 0 ? 0 : page * limit)
     .limit(limit)
     .addFields({
@@ -251,5 +272,7 @@ module.exports = {
   addFavorite,
   removeFavorite,
   addSaved,
-  removeSaved
+  removeSaved,
+  deleteOne,
+  updateOne
 };

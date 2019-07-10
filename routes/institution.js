@@ -4,6 +4,7 @@ const router = express();
 const { InstitutionService } = require('./../services');
 
 const validation = require('./../utils/middlewares/validationHandler');
+const { idSchema } = require('./../utils/schemas/base');
 const {
   createInstitutionSchema,
   createSubjectSchema
@@ -45,23 +46,28 @@ router.post(
   }
 );
 
-router.get('/:_id/subjects', async function(req, res, next) {
-  try {
-    const { _id } = req.params;
-    const data = await InstitutionService.getSubjects({ _id });
+router.get(
+  '/:_id/subjects',
+  validation({ _id: idSchema }, 'params'),
+  async function(req, res, next) {
+    try {
+      const { _id } = req.params;
+      const data = await InstitutionService.getSubjects({ _id });
 
-    res.status(200).json({
-      data,
-      message: '¡Materias recuperadas!'
-    });
-  } catch (err) {
-    next(err);
+      res.status(200).json({
+        data,
+        message: '¡Materias recuperadas!'
+      });
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 router.post(
   '/:_id/subjects',
   passport.authenticate('jwt', { session: false }),
+  validation({ _id: idSchema }, 'params'),
   validation(createSubjectSchema),
   async function(req, res, next) {
     try {

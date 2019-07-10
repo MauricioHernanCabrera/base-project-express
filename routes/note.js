@@ -4,7 +4,10 @@ const router = express();
 const { NoteService } = require('./../services');
 
 const validation = require('./../utils/middlewares/validationHandler');
-const { createNoteSchema } = require('./../utils/schemas/note');
+const {
+  createNoteSchema,
+  updateNoteSchema
+} = require('./../utils/schemas/note');
 const { idSchema } = require('./../utils/schemas/base');
 
 const passport = require('passport');
@@ -71,6 +74,47 @@ router.get('/:_id', validation({ _id: idSchema }, 'params'), async function(
     }
   })(req, res, next);
 });
+
+router.patch(
+  '/:_id',
+  passport.authenticate('jwt', { session: false }),
+  validation({ _id: idSchema }, 'params'),
+  validation(updateNoteSchema),
+  async function(req, res, next) {
+    try {
+      const { _id } = req.params;
+      const { user, body: data } = req;
+
+      await NoteService.updateOne({ _id, user, data });
+
+      res.status(200).json({
+        message: '¡Apunte actualizado!'
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.delete(
+  '/:_id',
+  passport.authenticate('jwt', { session: false }),
+  validation({ _id: idSchema }, 'params'),
+  async function(req, res, next) {
+    try {
+      const { _id } = req.params;
+      const { user } = req;
+
+      await NoteService.deleteOne({ _id, user });
+
+      res.status(200).json({
+        message: '¡Apunte eliminado!'
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 router.post(
   '/:_id/favorites',
