@@ -2,6 +2,9 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 const { ObjectId } = Schema.Types;
 
+const uniqueValidator = require('mongoose-unique-validator');
+const handleUniqueValidator = require('./../utils/handleUniqueValidator');
+
 const NoteSchema = Schema(
   {
     isActive: {
@@ -66,5 +69,12 @@ const NoteSchema = Schema(
   },
   { timestamps: true }
 );
+
+NoteSchema.plugin(uniqueValidator, {
+  message:
+    'Lo siento, {VALUE} ya esta en uso, ¡por favor ingrese otro {PATH} y vuelva a intentarlo!'
+});
+
+NoteSchema.post('save', handleUniqueValidator);
 
 module.exports = mongoose.model('Notes', NoteSchema);

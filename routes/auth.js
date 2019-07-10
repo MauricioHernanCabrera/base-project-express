@@ -8,7 +8,6 @@ const boom = require('@hapi/boom');
 const validation = require('./../utils/middlewares/validationHandler');
 const { registerAuthSchema } = require('./../utils/schemas/auth');
 const { UserService } = require('./../services');
-const userService = new UserService();
 const { config } = require('./../config');
 
 // Basic strategy
@@ -24,7 +23,7 @@ router.post('/register', validation(registerAuthSchema), async function(
   try {
     const { body: data } = req;
 
-    await userService.createUser({ data });
+    await UserService.createOne({ data });
 
     res.status(201).json({
       message: '¡Usuario creado!'

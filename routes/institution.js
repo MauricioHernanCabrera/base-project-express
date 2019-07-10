@@ -2,7 +2,6 @@ const express = require('express');
 const router = express();
 
 const { InstitutionService } = require('./../services');
-const institutionService = new InstitutionService();
 
 const validation = require('./../utils/middlewares/validationHandler');
 const {
@@ -15,7 +14,7 @@ require('./../utils/auth/strategies/jwt');
 
 router.get('/', async function(req, res, next) {
   try {
-    const data = await institutionService.getAll();
+    const data = await InstitutionService.getAll();
 
     res.status(200).json({
       data,
@@ -32,7 +31,7 @@ router.post(
   validation(createInstitutionSchema),
   async function(req, res, next) {
     try {
-      const data = await institutionService.createOne({
+      const data = await InstitutionService.createOne({
         data: req.body
       });
 
@@ -49,7 +48,7 @@ router.post(
 router.get('/:_id/subjects', async function(req, res, next) {
   try {
     const { _id } = req.params;
-    const data = await institutionService.getSubjects({ _id });
+    const data = await InstitutionService.getSubjects({ _id });
 
     res.status(200).json({
       data,
@@ -67,7 +66,7 @@ router.post(
   async function(req, res, next) {
     try {
       const { _id } = req.params;
-      const data = await institutionService.createSubject({
+      const data = await InstitutionService.createSubject({
         data: req.body,
         _id
       });

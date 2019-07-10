@@ -11,19 +11,17 @@ passport.use(
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken()
     },
     async function(tokenPayload, cb) {
-      const userService = new UserService();
-
       try {
         const filter = { username: tokenPayload.sub };
-        const user = userService.getUser(filter);
+        const user = await UserService.getOne({ filter });
 
         if (!user) {
           return cb(boom.unauthorized(), false);
         }
 
         return cb(null, user);
-      } catch (error) {
-        return cb(error);
+      } catch (err) {
+        return cb(err);
       }
     }
   )

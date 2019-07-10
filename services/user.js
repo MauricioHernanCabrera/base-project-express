@@ -1,19 +1,20 @@
 const { UserModel } = require('./../models');
 const bcrypt = require('bcrypt');
 
-class UserService {
-  getUser(filter) {
-    return UserModel.findOne(filter);
-  }
+const getOne = ({ filter }) => {
+  return UserModel.findOne(filter);
+};
 
-  async createUser({ data }) {
-    const { username, email, password } = data;
-    return UserModel.create({
-      username,
-      email,
-      password: await bcrypt.hash(password, 10)
-    });
-  }
-}
+const createOne = async ({ data }) => {
+  const { username, email, password } = data;
+  return UserModel.create({
+    username,
+    email,
+    password: await bcrypt.hash(password, 10)
+  });
+};
 
-module.exports = UserService;
+module.exports = {
+  getOne,
+  createOne
+};

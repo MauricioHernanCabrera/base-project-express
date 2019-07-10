@@ -13,7 +13,13 @@ const {
   clientErrorHandler
 } = require('./utils/middlewares/errorsHandlers');
 
-const { testRouter, authRouter, institutionRouter } = require('./routes');
+const {
+  authRouter,
+  institutionRouter,
+  codeNoteRouter,
+  codeYearRouter,
+  noteRouter
+} = require('./routes');
 
 // middleware
 app.use(bodyParser.json());
@@ -38,9 +44,11 @@ app.use((req, res, next) => {
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // routes
-app.use('/test', testRouter);
 app.use('/auth', authRouter);
 app.use('/institutions', institutionRouter);
+app.use('/code_notes', codeNoteRouter);
+app.use('/code_years', codeYearRouter);
+app.use('/notes', noteRouter);
 
 // error handlers
 app.use(logErrors);

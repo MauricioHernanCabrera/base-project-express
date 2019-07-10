@@ -6,14 +6,12 @@ const { UserService } = require('./../../../services');
 
 passport.use(
   new BasicStrategy(async function(username, password, cb) {
-    const userService = new UserService();
-
     try {
       const filter = {
         username
       };
 
-      const user = await userService.getUser(filter);
+      const user = await UserService.getOne({ filter });
 
       if (!user) {
         return cb(boom.unauthorized(), false);
