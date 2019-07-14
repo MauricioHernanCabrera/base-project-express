@@ -5,6 +5,7 @@ const CodeYearService = require('./../services/codeYear');
 const SubjectService = require('./../services/subject');
 
 const mongoose = require('mongoose');
+const { ObjectId } = mongoose.Types;
 const boom = require('@hapi/boom');
 
 const createOne = async ({ data }) => {
@@ -48,9 +49,8 @@ const updateOne = async ({ _id, user, data }) => {
 
 const getOne = async ({ _id, user = {} }) => {
   return new Promise(async (resolve, reject) => {
-    const note = await NoteModel.aggregate([
-      { $match: { _id: mongoose.Types.ObjectId(_id), isActive: true } }
-    ])
+    const note = await NoteModel.aggregate()
+      .match({ _id: ObjectId(_id), isActive: true })
       .addFields({
         countFavorites: { $size: '$favorites' },
         countSaved: { $size: '$saved' },
@@ -58,17 +58,8 @@ const getOne = async ({ _id, user = {} }) => {
         isSaved: { $in: [user._id, '$saved'] }
       })
       .project({
-        title: 1,
-        description: 1,
-        googleFolderId: 1,
-        codeNote: 1,
-        codeYear: 1,
-        subject: 1,
-        owner: 1,
-        countFavorites: 1,
-        countSaved: 1,
-        isFavorite: 1,
-        isSaved: 1
+        saved: 0,
+        favorites: 0
       });
 
     const notePopulate = await NoteModel.populate(note, [
@@ -104,8 +95,58 @@ const getOnelight = filter => {
   );
 };
 
-const getAll = async ({ user = {}, page = 0, limit = 5 }) => {
-  const notes = await NoteModel.aggregate([{ $match: { isActive: true } }])
+const getAll = async ({ user = {}, page = 0, limit = 20, filter }) => {
+  const customFilter = {};
+  if (filter.codeNote) customFilter['codeNote._id'] = ObjectId(filter.codeNote);
+  if (filter.codeYear) customFilter['codeYear._id'] = ObjectId(filter.codeYear);
+  if (filter.subject) customFilter['subject._id'] = ObjectId(filter.subject);
+  if (filter.institution)
+    customFilter['subject.institution._id'] = ObjectId(filter.institution);
+  if (filter.institution)
+    customFilter['subject.institution._id'] = ObjectId(filter.institution);
+  if (filter.search)
+    customFilter['$or'] = [
+      { title: { $regex: filter.search } },
+      { description: { $regex: filter.search } }
+    ];
+
+  const notes = await NoteModel.aggregate()
+    .lookup({
+      from: 'codenotes',
+      localField: 'codeNote',
+      foreignField: '_id',
+      as: 'codeNote'
+    })
+    .lookup({
+      from: 'codeyears',
+      localField: 'codeYear',
+      foreignField: '_id',
+      as: 'codeYear'
+    })
+    .lookup({
+      from: 'subjects',
+      localField: 'subject',
+      foreignField: '_id',
+      as: 'subject'
+    })
+    .addFields({
+      subject: { $arrayElemAt: ['$subject', 0] }
+    })
+    .lookup({
+      from: 'institutions',
+      localField: 'subject.institution',
+      foreignField: '_id',
+      as: 'subject.institution'
+    })
+    .addFields({
+      'subject.institution': { $arrayElemAt: ['$subject.institution', 0] },
+      codeNote: { $arrayElemAt: ['$codeNote', 0] },
+      codeYear: { $arrayElemAt: ['$codeYear', 0] }
+    })
+    .match({
+      isActive: true,
+      ...customFilter
+    })
     .skip(page == 0 ? 0 : page * limit)
     .limit(limit)
     .addFields({
@@ -115,35 +156,15 @@ const getAll = async ({ user = {}, page = 0, limit = 5 }) => {
       isSaved: { $in: [user._id, '$saved'] }
     })
     .project({
-      title: 1,
-      description: 1,
-      googleFolderId: 1,
-      codeNote: 1,
-      codeYear: 1,
-      subject: 1,
-      owner: 1,
-      countFavorites: 1,
-      countSaved: 1,
-      isFavorite: 1,
-      isSaved: 1
+      saved: 0,
+      favorites: 0,
+      'subject.institution.subjects': 0
     });
 
   const notesPopulates = await NoteModel.populate(notes, [
-    'codeNote',
-    'codeYear',
     {
       path: 'owner',
       select: ['email', 'username', '_id']
-    },
-    {
-      path: 'subject',
-      select: ['name', '_id', 'institution'],
-      populate: [
-        {
-          path: 'institution',
-          select: ['name', '_id']
-        }
-      ]
     }
   ]);
 

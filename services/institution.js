@@ -1,5 +1,6 @@
-const { InstitutionModel, SubjectModel } = require('./../models');
+const { InstitutionModel } = require('./../models');
 const boom = require('@hapi/boom');
+const SubjectService = require('./subject');
 
 const getAll = () => {
   return InstitutionModel.find()
@@ -22,12 +23,11 @@ const getSubjects = async ({ _id }) => {
 };
 
 const createSubject = async ({ data, _id }) => {
-  const subjectCreated = await SubjectModel.create({
+  const subjectCreated = await SubjectService.createOne({
     name: data.name,
     institution: _id
   });
-
-  await InstitutionModel.findOneAndUpdate(
+  const institutionWithSubject = await InstitutionModel.findOneAndUpdate(
     { _id, subjects: { $ne: subjectCreated._id } },
     {
       $push: { subjects: subjectCreated }

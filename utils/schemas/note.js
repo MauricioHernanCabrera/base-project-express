@@ -27,7 +27,17 @@ const updateNoteSchema = Joi.object().keys({
   subject: idSchema.optional()
 });
 
+const filterNoteSchema = Joi.object().keys({
+  codeYear: idSchema.optional(),
+  codeNote: idSchema.optional(),
+  subject: idSchema.optional(),
+  institution: idSchema.optional(),
+  search: Joi.string().optional(),
+  page: Joi.string().optional()
+});
+
 module.exports = {
   createNoteSchema,
-  updateNoteSchema
+  updateNoteSchema,
+  filterNoteSchema
 };

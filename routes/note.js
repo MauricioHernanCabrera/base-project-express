@@ -6,22 +6,29 @@ const { NoteService } = require('./../services');
 const validation = require('./../utils/middlewares/validationHandler');
 const {
   createNoteSchema,
-  updateNoteSchema
+  updateNoteSchema,
+  filterNoteSchema
 } = require('./../utils/schemas/note');
 const { idSchema } = require('./../utils/schemas/base');
 
 const passport = require('passport');
 require('./../utils/auth/strategies/jwt');
 
-router.get('/', async function(req, res, next) {
+router.get('/', validation(filterNoteSchema, 'query'), async function(
+  req,
+  res,
+  next
+) {
   passport.authenticate('jwt', async function(error, user) {
     try {
-      const page = parseInt(req.params.page) || 0;
-      const notes = await NoteService.getAll({ page, user });
+      const page = parseInt(req.query.page) || 0;
+      delete req.query.page;
+      const filter = req.query;
+      const notes = await NoteService.getAll({ page, user, filter });
 
       const data = { notes };
 
-      if (notes.length) data.nextPage = page + 1;
+      if (notes.length == 20) data.nextPage = page + 1;
 
       res.status(200).json({
         data,
