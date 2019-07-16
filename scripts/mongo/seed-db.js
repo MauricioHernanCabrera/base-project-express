@@ -1,7 +1,8 @@
 const { initDB } = require('./../../utils/db');
-const { CodeYearModel, CodeNoteModel } = require('./../../models');
 
-const codeYears = [
+const { InstitutionService, NoteService } = require('./../../services');
+const { CodeNoteModel, CodeYearModel, UserModel } = require('./../../models');
+const codeYearsData = [
   { name: '2019 / 2020' },
   { name: '2018 / 2019' },
   { name: '2017 / 2018' },
@@ -25,18 +26,88 @@ const codeYears = [
   { name: 'viejisimo' }
 ];
 
-const codeNotes = [
+const codeNotesData = [
   { name: 'Teoria' },
   { name: 'Resumen' },
   { name: 'Practico' },
   { name: 'Ejercicios' }
 ];
 
+const usersData = [
+  { username: 'hola', email: 'hola@gmail.com', password: '123456789' },
+  { username: 'hola2', email: 'hola2@gmail.com', password: '123456789' },
+  { username: 'hola3', email: 'hola3@gmail.com', password: '123456789' }
+];
+
+const institutionsData = [
+  { name: 'UNNE' },
+  { name: 'UTN' },
+  { name: 'Cuenca del Plata' }
+];
+
+const subjectsData = [
+  { name: 'Algoritmo I' },
+  { name: 'Algebra' },
+  { name: 'Paradigma' }
+];
+
+const getRandomInt = (min, max) => {
+  return Math.floor(Math.random() * (max - min)) + min;
+};
+
 (async function() {
-  await initDB();
+  try {
+    await initDB();
 
-  await CodeYearModel.insertMany(codeYears);
-  await CodeNoteModel.insertMany(codeNotes);
+    await CodeYearModel.insertMany(codeYearsData);
+    await CodeNoteModel.insertMany(codeNotesData);
+    await UserModel.insertMany(usersData);
 
-  return process.exit(0);
+    const institutionsPromises = institutionsData.map(institution => {
+      return InstitutionService.createOne({ data: institution });
+    });
+
+    const institutions = await Promise.all(institutionsPromises);
+
+    const subjectsPromises = institutions.map((institution, index) => {
+      return InstitutionService.createSubject({
+        data: subjectsData[index],
+        _id: institution._id
+      });
+    });
+
+    const codeNotes = await CodeNoteModel.find({});
+    const codeYears = await CodeYearModel.find({});
+    const subjects = await Promise.all(subjectsPromises);
+    const users = await UserModel.find({});
+
+    // const notesPromises = [];
+
+    // for (let i = 0; i < users.length; i++) {
+    //   for (let j = 0; j < users.length; j++) {
+    //     notesPromises.push(
+    //       NoteService.createOne({
+    //         data: {
+    //           title: `El mejor apunte del mundo${getRandomInt(0, 10000)}`,
+    //           googleFolderId: '123456789',
+    //           codeNote: String(
+    //             codeNotes[getRandomInt(0, codeNotes.length)]._id
+    //           ),
+    //           codeYear: String(
+    //             codeYears[getRandomInt(0, codeYears.length)]._id
+    //           ),
+    //           subject: String(subjects[j]._id),
+    //           owner: String(users[i]._id)
+    //         }
+    //       })
+    //     );
+    //   }
+    // }
+
+    // const notes = await Promise.all(notesPromises);
+  } catch (error) {
+    console.log(error);
+  } finally {
+    return process.exit(0);
+  }
 })();

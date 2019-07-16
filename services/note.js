@@ -18,10 +18,10 @@ const createOne = async ({ data }) => {
   await UserModel.findOneAndUpdate(
     {
       _id: data.owner,
-      notesCreated: { $ne: noteCreated._id }
+      'created.note': { $ne: noteCreated._id }
     },
     {
-      $push: { notesCreated: noteCreated }
+      $push: { created: { note: noteCreated } }
     }
   );
 
@@ -54,8 +54,8 @@ const getOne = async ({ _id, user = {} }) => {
       .addFields({
         countFavorites: { $size: '$favorites' },
         countSaved: { $size: '$saved' },
-        isFavorite: { $in: [user._id, '$favorites'] },
-        isSaved: { $in: [user._id, '$saved'] }
+        isFavorite: { $in: [user._id, '$favorites.user'] },
+        isSaved: { $in: [user._id, '$saved.user'] }
       })
       .project({
         saved: 0,
@@ -97,32 +97,19 @@ const getOnelight = filter => {
 
 const getAll = async ({ user = {}, page = 0, limit = 20, filter }) => {
   const customFilter = {};
-  if (filter.codeNote) customFilter['codeNote._id'] = ObjectId(filter.codeNote);
-  if (filter.codeYear) customFilter['codeYear._id'] = ObjectId(filter.codeYear);
+  if (filter.codeNote) customFilter['codeNote'] = ObjectId(filter.codeNote);
+  if (filter.codeYear) customFilter['codeYear'] = ObjectId(filter.codeYear);
   if (filter.subject) customFilter['subject._id'] = ObjectId(filter.subject);
   if (filter.institution)
     customFilter['subject.institution._id'] = ObjectId(filter.institution);
-  if (filter.institution)
-    customFilter['subject.institution._id'] = ObjectId(filter.institution);
+
   if (filter.search)
     customFilter['$or'] = [
       { title: { $regex: filter.search } },
       { description: { $regex: filter.search } }
     ];
 
-  const notes = await NoteModel.aggregate()
-    .lookup({
-      from: 'codenotes',
-      localField: 'codeNote',
-      foreignField: '_id',
-      as: 'codeNote'
-    })
-    .lookup({
-      from: 'codeyears',
-      localField: 'codeYear',
-      foreignField: '_id',
-      as: 'codeYear'
-    })
+  const notesFiltered = await NoteModel.aggregate()
     .lookup({
       from: 'subjects',
       localField: 'subject',
@@ -139,9 +126,7 @@ const getAll = async ({ user = {}, page = 0, limit = 20, filter }) => {
       as: 'subject.institution'
     })
     .addFields({
-      'subject.institution': { $arrayElemAt: ['$subject.institution', 0] },
-      codeNote: { $arrayElemAt: ['$codeNote', 0] },
-      codeYear: { $arrayElemAt: ['$codeYear', 0] }
+      institution: { $arrayElemAt: ['$institution', 0] }
     })
     .match({
       isActive: true,
@@ -152,8 +137,8 @@ const getAll = async ({ user = {}, page = 0, limit = 20, filter }) => {
     .addFields({
       countFavorites: { $size: '$favorites' },
       countSaved: { $size: '$saved' },
-      isFavorite: { $in: [user._id, '$favorites'] },
-      isSaved: { $in: [user._id, '$saved'] }
+      isFavorite: { $in: [user._id, '$favorites.user'] },
+      isSaved: { $in: [user._id, '$saved.user'] }
     })
     .project({
       saved: 0,
@@ -161,10 +146,16 @@ const getAll = async ({ user = {}, page = 0, limit = 20, filter }) => {
       'subject.institution.subjects': 0
     });
 
-  const notesPopulates = await NoteModel.populate(notes, [
+  const notesPopulates = await NoteModel.populate(notesFiltered, [
     {
       path: 'owner',
       select: ['email', 'username', '_id']
+    },
+    {
+      path: 'codeYear'
+    },
+    {
+      path: 'codeNote'
     }
   ]);
 
@@ -176,15 +167,15 @@ const addFavorite = ({ _id, user = {} }) => {
     const note = await getOnelight({ _id });
 
     const noteFavorite = await NoteModel.findOneAndUpdate(
-      { _id, favorites: { $ne: user._id } },
+      { _id, 'favorites.user': { $ne: user._id } },
       {
-        $push: { favorites: user }
+        $push: { favorites: { user: user } }
       }
     );
     const userFavorite = await UserModel.findOneAndUpdate(
-      { _id: user._id, notesFavorites: { $ne: note._id } },
+      { _id: user._id, 'favorites.note': { $ne: note._id } },
       {
-        $push: { notesFavorites: note }
+        $push: { favorites: { note: note } }
       }
     );
 
@@ -203,20 +194,20 @@ const removeFavorite = ({ _id, user = {} }) => {
     const noteFavorite = await NoteModel.findOneAndUpdate(
       {
         _id: note._id,
-        favorites: { $eq: user._id }
+        'favorites.user': { $eq: user._id }
       },
       {
-        $pull: { favorites: user._id }
+        $pull: { favorites: { user: user._id } }
       }
     );
 
     const userFavorite = await UserModel.findOneAndUpdate(
       {
         _id: user._id,
-        notesFavorites: { $eq: note._id }
+        'favorites.note': { $eq: note._id }
       },
       {
-        $pull: { notesFavorites: note._id }
+        $pull: { favorites: { note: note._id } }
       }
     );
 
@@ -233,15 +224,15 @@ const addSaved = ({ _id, user = {} }) => {
     const note = await getOnelight({ _id });
 
     const noteSaved = await NoteModel.findOneAndUpdate(
-      { _id, saved: { $ne: user._id } },
+      { _id, 'saved.user': { $ne: user._id } },
       {
-        $push: { saved: user }
+        $push: { saved: { user: user } }
       }
     );
     const userSaved = await UserModel.findOneAndUpdate(
-      { _id: user._id, notesSaved: { $ne: note._id } },
+      { _id: user._id, 'saved.note': { $ne: note._id } },
       {
-        $push: { notesSaved: note }
+        $push: { saved: { note: note } }
       }
     );
 
@@ -260,20 +251,20 @@ const removeSaved = ({ _id, user = {} }) => {
     const noteSaved = await NoteModel.findOneAndUpdate(
       {
         _id: note._id,
-        saved: { $eq: user._id }
+        'saved.user': { $eq: user._id }
       },
       {
-        $pull: { saved: user._id }
+        $pull: { saved: { user: user._id } }
       }
     );
 
     const userSaved = await UserModel.findOneAndUpdate(
       {
         _id: user._id,
-        notesSaved: { $eq: note._id }
+        'saved.note': { $eq: note._id }
       },
       {
-        $pull: { notesSaved: note._id }
+        $pull: { saved: { note: note._id } }
       }
     );
 

@@ -1,6 +1,7 @@
 const { InstitutionModel } = require('./../models');
 const boom = require('@hapi/boom');
 const SubjectService = require('./subject');
+const removeAccent = require('./../utils/removeAccent');
 
 const getAll = () => {
   return InstitutionModel.find()
@@ -9,7 +10,8 @@ const getAll = () => {
 };
 
 const createOne = ({ data }) => {
-  return InstitutionModel.create(data);
+  const nameSort = removeAccent(data.name);
+  return InstitutionModel.create({ ...data, nameSort });
 };
 
 const getSubjects = async ({ _id }) => {

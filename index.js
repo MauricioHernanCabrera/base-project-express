@@ -18,7 +18,8 @@ const {
   institutionRouter,
   codeNoteRouter,
   codeYearRouter,
-  noteRouter
+  noteRouter,
+  userRouter
 } = require('./routes');
 
 // middleware
@@ -49,6 +50,7 @@ app.use('/institutions', institutionRouter);
 app.use('/code_notes', codeNoteRouter);
 app.use('/code_years', codeYearRouter);
 app.use('/notes', noteRouter);
+app.use('/users', userRouter);
 
 // error handlers
 app.use(logErrors);

@@ -3,7 +3,6 @@ const { Schema } = mongoose;
 const { ObjectId } = Schema.Types;
 const uniqueValidator = require('mongoose-unique-validator');
 const handleUniqueValidator = require('./../utils/handleUniqueValidator');
-const removeAccent = require('./../utils/removeAccent');
 
 const InstitutionSchema = Schema(
   {
@@ -35,11 +34,6 @@ const InstitutionSchema = Schema(
 InstitutionSchema.plugin(uniqueValidator, {
   message:
     'Lo siento, {VALUE} ya esta en uso, ¡por favor ingrese otro {PATH} y vuelva a intentarlo!'
-});
-
-// Por alguna extraña razon no puedo ejecutar esto en .pre('save') y bueno funciono aca
-InstitutionSchema.pre('validate', function() {
-  this.nameSort = removeAccent(this.name);
 });
 
 InstitutionSchema.post('save', handleUniqueValidator);

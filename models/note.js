@@ -5,6 +5,17 @@ const { ObjectId } = Schema.Types;
 const uniqueValidator = require('mongoose-unique-validator');
 const handleUniqueValidator = require('./../utils/handleUniqueValidator');
 
+const UserMoreTimestampsSchema = Schema(
+  {
+    user: {
+      type: ObjectId,
+      ref: 'Users',
+      required: true
+    }
+  },
+  { timestamps: true }
+);
+
 const NoteSchema = Schema(
   {
     isActive: {
@@ -53,16 +64,14 @@ const NoteSchema = Schema(
 
     favorites: [
       {
-        type: ObjectId,
-        ref: 'Users',
+        type: UserMoreTimestampsSchema,
         default: []
       }
     ],
 
     saved: [
       {
-        type: ObjectId,
-        ref: 'Users',
+        type: UserMoreTimestampsSchema,
         default: []
       }
     ]
