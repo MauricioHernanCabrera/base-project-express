@@ -1,10 +1,10 @@
-const { UserModel } = require('./../models');
+const { UserModel, NoteModel } = require('./../models');
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Types;
 
-const getOne = ({ filter }) => {
-  return UserModel.findOne(filter);
+const getOne = ({ filter, select = '' }) => {
+  return UserModel.findOne(filter).select(select);
 };
 
 const createOne = async ({ data }) => {
@@ -16,50 +16,43 @@ const createOne = async ({ data }) => {
   });
 };
 
-const getAllNotes = async ({
-  _id,
-  page = 0,
-  limit = 1,
-  filter,
-  noteName = 'notesCreated'
-}) => {
-  const notesFiltered = await UserModel.findOne({
+const getAllNotes = async ({ _id, page = 0, limit = 20, noteName }) => {
+  const notesPopulates = await UserModel.findOne({
     isActive: true,
     _id
-  }).populate({
-    path: `${noteName}.noteId`,
-    populate: [
-      {
-        path: 'codeYear'
-      },
-      {
-        path: 'codeNote'
-      },
-      {
-        path: 'subject',
-        populate: {
-          path: 'institution',
-          select: '-subjects'
-        }
-      },
-      {
-        path: 'owner',
-        select: ['email', 'username', '_id']
-      }
-    ]
-  });
-  // .populate({
-  //   path: noteName,
-  //   options: {
-  //     limit,
-  //     sort: {
-  //       createdAt: -1
-  //     },
-  //     skip: page == 0 ? 0 : page * limit
-  //   }
-  // })
+  }).select(noteName);
 
-  return notesFiltered[noteName];
+  const notesSorted = notesPopulates[noteName]
+    .slice()
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const skip = page == 0 ? 0 : page * limit;
+  const notesPaginated = notesSorted.slice(skip, skip + limit);
+
+  return NoteModel.populate(notesPaginated, [
+    {
+      path: 'note',
+      populate: [
+        {
+          path: 'codeYear'
+        },
+        {
+          path: 'codeNote'
+        },
+        {
+          path: 'subject',
+          populate: {
+            path: 'institution',
+            select: '-subjects'
+          }
+        },
+        {
+          path: 'owner',
+          select: ['email', 'username', '_id']
+        }
+      ]
+    }
+  ]);
 };
 
 module.exports = {

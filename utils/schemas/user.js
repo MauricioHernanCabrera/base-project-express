@@ -8,7 +8,13 @@ const Joi = require('@hapi/joi');
 //   name: Joi.string().required()
 // });
 
+const getNotesQuery = Joi.object().keys({
+  noteName: Joi.string()
+    .valid('created', 'favorites', 'saved')
+    .optional(),
+  page: Joi.number().optional()
+});
+
 module.exports = {
-  // createInstitutionSchema,
-  // createSubjectSchema
+  getNotesQuery
 };
