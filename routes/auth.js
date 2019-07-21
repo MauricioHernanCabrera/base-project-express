@@ -1,12 +1,17 @@
 const express = require('express');
 const router = express();
+const nodemailer = require('nodemailer');
 
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
 const boom = require('@hapi/boom');
 
 const validation = require('./../utils/middlewares/validationHandler');
-const { registerAuthSchema } = require('./../utils/schemas/auth');
+const {
+  registerAuthSchema,
+  forgotSchema,
+  resetSchema
+} = require('./../utils/schemas/auth');
 const { UserService } = require('./../services');
 const { config } = require('./../config');
 
@@ -70,7 +75,115 @@ router.get(
   }
 );
 
-// router.post('/reset_password', async function (req, res, next) {})
-// router.post('/confirm_reset_password', async function (req, res, next) {})
+router.post('/forgot', validation(forgotSchema), async function(
+  req,
+  res,
+  next
+) {
+  try {
+    const { email } = req.body;
+
+    const userFound = await UserService.getOne({
+      filter: { email }
+    });
+
+    const resetPasswordToken = require('crypto')
+      .randomBytes(32)
+      .toString('hex');
+    const resetPasswordExpires = Date.now() + 3600000; // 1 hour
+
+    const userUpdated = await UserService.updateOne({
+      filter: { _id: userFound._id },
+      data: {
+        resetPasswordToken,
+        resetPasswordExpires
+      }
+    });
+
+    var smtpTransport = nodemailer.createTransport({
+      service: 'Gmail',
+      auth: {
+        user: config.nodemailEmail,
+        pass: config.nodemailPassword
+      }
+    });
+
+    var mailOptions = {
+      to: email,
+      from: config.nodemailEmail,
+      subject: 'Apuntus reiniciar contraseña',
+      text:
+        'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
+        'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
+        'https://apuntus.com/auth/reset/' +
+        resetPasswordToken +
+        '\n\n' +
+        'If you did not request this, please ignore this email and your password will remain unchanged.\n'
+    };
+
+    await smtpTransport.sendMail(mailOptions);
+
+    res.status(200).json({
+      message: 'Te enviamos un mail para que recuperes tu contraseña'
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/reset/:resetPasswordToken', async function(req, res, next) {
+  try {
+    const { resetPasswordToken } = req.params;
+    const resetPasswordExpires = Date.now();
+
+    const userFound = await UserService.getOne({
+      filter: {
+        resetPasswordToken,
+        resetPasswordExpires: { $gte: resetPasswordExpires }
+      },
+      select: ['email'],
+      failText: 'Expiro el token para recuperar tu cuenta'
+    });
+
+    res.status(200).json({
+      data: userFound,
+      message: 'Usuario recuperado'
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post(
+  '/reset/:resetPasswordToken',
+  validation(resetSchema),
+  async function(req, res, next) {
+    try {
+      const { resetPasswordToken } = req.params;
+      const { password } = req.body;
+      const resetPasswordExpires = Date.now();
+
+      const userFound = await UserService.getOne({
+        filter: {
+          resetPasswordToken,
+          resetPasswordExpires: { $gte: resetPasswordExpires }
+        },
+        select: ['email'],
+        failText: 'Expiro el token para recuperar tu cuenta'
+      });
+
+      await UserService.updateOne({
+        filter: { _id: userFound._id },
+        data: { password, resetPasswordExpires }
+      });
+
+      res.status(200).json({
+        message: '¡Contraseña actualizada!'
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 module.exports = router;

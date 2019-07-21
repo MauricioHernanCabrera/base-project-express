@@ -43,7 +43,7 @@ const UserSchema = Schema(
       required: true
     },
 
-    urlImg: {
+    avatar: {
       type: String,
       default: ''
     },
@@ -67,7 +67,11 @@ const UserSchema = Schema(
         type: NoteMoreTimestampsSchema,
         default: []
       }
-    ]
+    ],
+
+    resetPasswordToken: { type: String, default: '' },
+
+    resetPasswordExpires: { type: Date, default: Date.now() }
   },
   { timestamps: true }
 );

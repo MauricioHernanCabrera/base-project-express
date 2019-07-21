@@ -4,11 +4,11 @@ const Joi = require('@hapi/joi');
 //   name: Joi.string().required()
 // });
 
-// const createSubjectSchema = Joi.object().keys({
-//   name: Joi.string().required()
-// });
+const createSubjectSchema = Joi.object().keys({
+  name: Joi.string().required()
+});
 
-const getNotesQuery = Joi.object().keys({
+const getNotesQuerySchema = Joi.object().keys({
   noteName: Joi.string()
     .valid('created', 'favorites', 'saved')
     .optional(),
@@ -16,5 +16,5 @@ const getNotesQuery = Joi.object().keys({
 });
 
 module.exports = {
-  getNotesQuery
+  getNotesQuerySchema
 };
