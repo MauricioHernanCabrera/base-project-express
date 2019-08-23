@@ -55,6 +55,17 @@ const getRandomInt = (min, max) => {
   return Math.floor(Math.random() * (max - min)) + min;
 };
 
+const getRandomString = (length = 36) => {
+  var result = '';
+  var characters =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var charactersLength = characters.length;
+  for (var i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+};
+
 (async function() {
   try {
     await initDB();
@@ -81,30 +92,31 @@ const getRandomInt = (min, max) => {
     const subjects = await Promise.all(subjectsPromises);
     const users = await UserModel.find({});
 
-    // const notesPromises = [];
+    const notesPromises = [];
 
-    // for (let i = 0; i < users.length; i++) {
-    //   for (let j = 0; j < users.length; j++) {
-    //     notesPromises.push(
-    //       NoteService.createOne({
-    //         data: {
-    //           title: `El mejor apunte del mundo${getRandomInt(0, 10000)}`,
-    //           googleFolderId: '123456789',
-    //           codeNote: String(
-    //             codeNotes[getRandomInt(0, codeNotes.length)]._id
-    //           ),
-    //           codeYear: String(
-    //             codeYears[getRandomInt(0, codeYears.length)]._id
-    //           ),
-    //           subject: String(subjects[j]._id),
-    //           owner: String(users[i]._id)
-    //         }
-    //       })
-    //     );
-    //   }
-    // }
+    for (let i = 0; i < users.length; i++) {
+      for (let j = 0; j < 20; j++) {
+        notesPromises.push(
+          NoteService.createOne({
+            data: {
+              title: getRandomString(getRandomInt(30, 80)),
+              description: getRandomString(getRandomInt(100, 500)),
+              googleFolderId: '123456789',
+              codeNote: String(
+                codeNotes[getRandomInt(0, codeNotes.length)]._id
+              ),
+              codeYear: String(
+                codeYears[getRandomInt(0, codeYears.length)]._id
+              ),
+              subject: String(subjects[getRandomInt(0, subjects.length)]._id),
+              owner: String(users[i]._id)
+            }
+          })
+        );
+      }
+    }
 
-    // const notes = await Promise.all(notesPromises);
+    const notes = await Promise.all(notesPromises);
   } catch (error) {
     console.log(error);
   } finally {

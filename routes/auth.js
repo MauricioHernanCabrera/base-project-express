@@ -7,11 +7,8 @@ const jwt = require('jsonwebtoken');
 const boom = require('@hapi/boom');
 
 const validation = require('./../utils/middlewares/validationHandler');
-const {
-  registerAuthSchema,
-  forgotSchema,
-  resetSchema
-} = require('./../utils/schemas/auth');
+
+const { AuthSchema } = require('./../utils/schemas');
 const { UserService } = require('./../services');
 const { config } = require('./../config');
 
@@ -19,8 +16,9 @@ const { config } = require('./../config');
 require('./../utils/auth/strategies/basic');
 // JWT
 require('./../utils/auth/strategies/jwt');
+require('./../utils/auth/strategies/facebook-token');
 
-router.post('/register', validation(registerAuthSchema), async function(
+router.post('/register', validation(AuthSchema.register), async function(
   req,
   res,
   next
@@ -31,7 +29,7 @@ router.post('/register', validation(registerAuthSchema), async function(
     await UserService.createOne({ data });
 
     res.status(201).json({
-      message: '¡Usuario creado!'
+      message: '¡Usuario registrado!'
     });
   } catch (err) {
     next(err);
@@ -42,7 +40,7 @@ router.get('/token', async function(req, res, next) {
   passport.authenticate('basic', function(error, user) {
     try {
       if (error || !user) {
-        next(boom.unauthorized());
+        next(boom.badRequest('¡Nombre de usuario o contraseña incorrecto!'));
       }
 
       req.login(user, { session: false }, async function(error) {
@@ -52,13 +50,13 @@ router.get('/token', async function(req, res, next) {
 
         const payload = { sub, email };
 
-        const access_token = jwt.sign(payload, config.authJwtSecret, {
+        const token = jwt.sign(payload, config.authJwtSecret, {
           expiresIn: '14d'
         });
 
         return res.status(200).json({
           message: '¡Usuario autenticado!',
-          data: { access_token }
+          data: { token }
         });
       });
     } catch (error) {
@@ -75,7 +73,7 @@ router.get(
   }
 );
 
-router.post('/forgot', validation(forgotSchema), async function(
+router.post('/forgot', validation(AuthSchema.forgot), async function(
   req,
   res,
   next
@@ -115,7 +113,7 @@ router.post('/forgot', validation(forgotSchema), async function(
       text:
         'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
         'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
-        'https://apuntus.com/auth/reset/' +
+        'http://localhost:3000/auth/reset/' +
         resetPasswordToken +
         '\n\n' +
         'If you did not request this, please ignore this email and your password will remain unchanged.\n'
@@ -141,7 +139,7 @@ router.get('/reset/:resetPasswordToken', async function(req, res, next) {
         resetPasswordToken,
         resetPasswordExpires: { $gte: resetPasswordExpires }
       },
-      select: ['email'],
+      select: ['email', 'username'],
       failText: 'Expiro el token para recuperar tu cuenta'
     });
 
@@ -156,7 +154,7 @@ router.get('/reset/:resetPasswordToken', async function(req, res, next) {
 
 router.post(
   '/reset/:resetPasswordToken',
-  validation(resetSchema),
+  validation(AuthSchema.reset),
   async function(req, res, next) {
     try {
       const { resetPasswordToken } = req.params;

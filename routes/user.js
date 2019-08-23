@@ -2,45 +2,64 @@ const express = require('express');
 const router = express();
 
 const { UserService } = require('./../services');
-
-const validation = require('./../utils/middlewares/validationHandler');
-const { getNotesQuerySchema } = require('./../utils/schemas/user');
-
 const passport = require('passport');
+const validation = require('./../utils/middlewares/validationHandler');
+const { BaseSchema, UserSchema } = require('./../utils/schemas');
+
 require('./../utils/auth/strategies/jwt');
 
 router.get(
   '/:_id/notes',
-  validation(getNotesQuerySchema, 'query'),
+  validation({ _id: BaseSchema.id }, 'params'),
+  validation(UserSchema.filterNoteQuery, 'query'),
   async function(req, res, next) {
-    passport.authenticate('jwt', async function(error, user) {
-      try {
-        const page = parseInt(req.query.page) || 0;
-        const { _id } = req.params;
-        const { noteName = 'created' } = req.query;
+    try {
+      const page = parseInt(req.query.page) || 0;
+      const { _id } = req.params;
+      const { noteName = 'created' } = req.query;
 
-        const notes = await UserService.getAllNotes({ _id, noteName, page });
-        const data = { notes };
+      const data = await UserService.getAllNotes({ _id, noteName, page });
 
-        if (notes.length == 20) data.nextPage = page + 1;
-
-        res.status(200).json({
-          data,
-          message: '¡Apuntes recuperados!'
-        });
-      } catch (err) {
-        next(err);
-      }
-    })(req, res, next);
+      res.status(200).json({
+        data,
+        message: '¡Apuntes recuperados!'
+      });
+    } catch (err) {
+      next(err);
+    }
   }
 );
 
-router.get('/:_id', async function(req, res, next) {
+router.get('/me', async function(req, res, next) {
+  passport.authenticate('jwt', function(error, user) {
+    try {
+      if (error || !user) {
+        next(boom.badRequest('¡Nombre de usuario o contraseña incorrecto!'));
+      }
+
+      return res.status(200).json({
+        message: '¡Usuario obtenido!',
+        data: user
+      });
+    } catch (error) {
+      next(error);
+    }
+  })(req, res, next);
+});
+
+router.get('/:username', async function(req, res, next) {
   try {
-    const _id = req.params;
+    const { username } = req.params;
     const data = await UserService.getOne({
-      filter: { _id },
-      select: ['-password', '-favorites', '-saved', '-created']
+      filter: { username },
+      select: [
+        '-password',
+        '-favorites',
+        '-saved',
+        '-created',
+        '-resetPasswordToken',
+        '-resetPasswordExpires'
+      ]
     });
 
     res.status(200).json({

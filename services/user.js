@@ -7,11 +7,16 @@ const { ObjectId } = mongoose.Types;
 const getOne = ({
   filter,
   select = '',
-  failText = 'No se encontro el usuario'
+  failText = 'No se encontro el usuario',
+  withFail = true
 }) => {
-  return UserModel.findOne(filter)
-    .select(select)
-    .orFail(boom.notFound(failText));
+  if (withFail) {
+    return UserModel.findOne(filter)
+      .select(select)
+      .orFail(boom.notFound(failText));
+  } else {
+    return UserModel.findOne(filter).select(select);
+  }
 };
 
 const createOne = async ({ data }) => {
@@ -46,7 +51,7 @@ const getAllNotes = async ({ _id, page = 0, limit = 20, noteName }) => {
   const skip = page == 0 ? 0 : page * limit;
   const notesPaginated = notesSorted.slice(skip, skip + limit);
 
-  return NoteModel.populate(notesPaginated, [
+  const notesPopulates = await NoteModel.populate(notesPaginated, [
     {
       path: 'note',
       populate: [
@@ -70,6 +75,13 @@ const getAllNotes = async ({ _id, page = 0, limit = 20, noteName }) => {
       ]
     }
   ]);
+
+  const data = {};
+
+  if (notesPopulates.length == limit) data.nextPage = page + 1;
+  data.array = notesPopulates;
+
+  return data;
 };
 
 module.exports = {

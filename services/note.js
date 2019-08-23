@@ -13,7 +13,10 @@ const createOne = async ({ data }) => {
   await CodeYearService.getOne({ _id: data.codeYear });
   await SubjectService.getOne({ _id: data.subject });
 
-  const noteCreated = await NoteModel.create(data);
+  const noteCreated = await NoteModel.create({
+    ...data,
+    googleFolderId: 'hola23123123'
+  });
 
   await UserModel.findOneAndUpdate(
     {
@@ -105,8 +108,12 @@ const getAll = async ({ user = {}, page = 0, limit = 20, filter }) => {
 
   if (filter.search)
     customFilter['$or'] = [
-      { title: { $regex: filter.search } },
-      { description: { $regex: filter.search } }
+      { title: { $regex: new RegExp(filter.search.toLowerCase(), 'i') } },
+      {
+        description: {
+          $regex: new RegExp(filter.search.toLowerCase(), 'i')
+        }
+      }
     ];
 
   const notesFiltered = await NoteModel.aggregate()
@@ -126,17 +133,20 @@ const getAll = async ({ user = {}, page = 0, limit = 20, filter }) => {
       as: 'subject.institution'
     })
     .addFields({
-      institution: { $arrayElemAt: ['$institution', 0] }
+      'subject.institution': { $arrayElemAt: ['$subject.institution', 0] }
     })
     .match({
       isActive: true,
       ...customFilter
     })
-    .skip(page == 0 ? 0 : page * limit)
-    .limit(limit)
     .addFields({
-      countFavorites: { $size: '$favorites' },
-      countSaved: { $size: '$saved' },
+      countFavorites: { $size: '$favorites' }
+    })
+    .sort({
+      countFavorites: -1,
+      createdAt: -1
+    })
+    .addFields({
       isFavorite: { $in: [user._id, '$favorites.user'] },
       isSaved: { $in: [user._id, '$saved.user'] }
     })
@@ -146,7 +156,9 @@ const getAll = async ({ user = {}, page = 0, limit = 20, filter }) => {
       'subject.institution.subjects': 0
     });
 
-  const notesPopulates = await NoteModel.populate(notesFiltered, [
+  const skip = page == 0 ? 0 : page * limit;
+  const notesPaginated = notesFiltered.slice(skip, skip + limit);
+  const notesPopulates = await NoteModel.populate(notesPaginated, [
     {
       path: 'owner',
       select: ['email', 'username', '_id']
@@ -159,12 +171,22 @@ const getAll = async ({ user = {}, page = 0, limit = 20, filter }) => {
     }
   ]);
 
-  return notesPopulates;
+  const data = {};
+
+  if (notesPopulates.length == limit) data.nextPage = page + 1;
+  data.array = notesPopulates;
+
+  return data;
 };
 
 const addFavorite = ({ _id, user = {} }) => {
   return new Promise(async (resolve, reject) => {
-    const note = await getOnelight({ _id });
+    let note = {};
+    try {
+      note = await getOnelight({ _id, isActive: true });
+    } catch (error) {
+      reject(error);
+    }
 
     const noteFavorite = await NoteModel.findOneAndUpdate(
       { _id, 'favorites.user': { $ne: user._id } },
@@ -189,7 +211,12 @@ const addFavorite = ({ _id, user = {} }) => {
 
 const removeFavorite = ({ _id, user = {} }) => {
   return new Promise(async (resolve, reject) => {
-    const note = await getOnelight({ _id });
+    let note = {};
+    try {
+      note = await getOnelight({ _id, isActive: true });
+    } catch (error) {
+      reject(error);
+    }
 
     const noteFavorite = await NoteModel.findOneAndUpdate(
       {
@@ -221,7 +248,12 @@ const removeFavorite = ({ _id, user = {} }) => {
 
 const addSaved = ({ _id, user = {} }) => {
   return new Promise(async (resolve, reject) => {
-    const note = await getOnelight({ _id });
+    let note = {};
+    try {
+      note = await getOnelight({ _id, isActive: true });
+    } catch (error) {
+      reject(error);
+    }
 
     const noteSaved = await NoteModel.findOneAndUpdate(
       { _id, 'saved.user': { $ne: user._id } },
@@ -246,7 +278,12 @@ const addSaved = ({ _id, user = {} }) => {
 
 const removeSaved = ({ _id, user = {} }) => {
   return new Promise(async (resolve, reject) => {
-    const note = await getOnelight({ _id });
+    let note = {};
+    try {
+      note = await getOnelight({ _id, isActive: true });
+    } catch (error) {
+      reject(error);
+    }
 
     const noteSaved = await NoteModel.findOneAndUpdate(
       {

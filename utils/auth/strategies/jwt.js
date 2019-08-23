@@ -13,7 +13,17 @@ passport.use(
     async function(tokenPayload, cb) {
       try {
         const filter = { username: tokenPayload.sub };
-        const user = await UserService.getOne({ filter });
+        const user = await UserService.getOne({
+          filter,
+          select: [
+            '-favorites',
+            '-saved',
+            '-created',
+            '-password',
+            '-resetPasswordExpires',
+            '-resetPasswordToken'
+          ]
+        });
 
         if (!user) {
           return cb(boom.unauthorized(), false);

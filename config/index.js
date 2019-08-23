@@ -10,7 +10,11 @@ const config = {
   authAdminEmail: process.env.AUTH_ADMIN_EMAIL,
   authJwtSecret: process.env.AUTH_JWT_SECRET,
   nodemailEmail: process.env.NODEMAIL_EMAIL,
-  nodemailPassword: process.env.NODEMAIL_PASSWORD
+  nodemailPassword: process.env.NODEMAIL_PASSWORD,
+
+  // SOCIAL LOGIN
+  facebookClientId: process.env.FACEBOOK_CLIENT_ID,
+  facebookClientSecret: process.env.FACEBOOK_CLIENT_SECRET
 };
 
 module.exports = { config };

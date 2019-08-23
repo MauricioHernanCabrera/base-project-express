@@ -43,10 +43,10 @@ const UserSchema = Schema(
       required: true
     },
 
-    avatar: {
-      type: String,
-      default: ''
-    },
+    // avatar: {
+    //   type: String,
+    //   default: ''
+    // },
 
     favorites: [
       {
@@ -72,6 +72,15 @@ const UserSchema = Schema(
     resetPasswordToken: { type: String, default: '' },
 
     resetPasswordExpires: { type: Date, default: Date.now() }
+
+    // facebookProvider: {
+    //   type: {
+    //     id: String,
+    //     token: String
+    //   },
+
+    //   select: false
+    // }
   },
   { timestamps: true }
 );
@@ -83,6 +92,41 @@ UserSchema.plugin(uniqueValidator, {
 
 UserSchema.post('save', handleUniqueValidator);
 
-const UserModel = mongoose.model('Users', UserSchema);
+// UserSchema.statics.upsertFbUser = function(
+//   accessToken,
+//   refreshToken,
+//   profile,
+//   cb
+// ) {
+//   return this.findOne(
+//     {
+//       'facebookProvider.id': profile.id
+//     },
+//     async (err, user) => {
+//       console.log(profile);
 
-module.exports = UserModel;
+//       if (!user) {
+//         const newUser = this({
+//           username: profile.displayName,
+//           email: profile.emails[0].value,
+//           password: 'asdasdasdasd',
+//           facebookProvider: {
+//             id: profile.id,
+//             token: accessToken
+//           }
+//         });
+
+//         try {
+//           const savedUser = await newUser.save();
+//           cb(null, savedUser);
+//         } catch (error) {
+//           cb(error, user);
+//         }
+//       } else {
+//         return cb(err, user);
+//       }
+//     }
+//   );
+// };
+
+module.exports = mongoose.model('Users', UserSchema);

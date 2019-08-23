@@ -4,11 +4,12 @@ const router = express();
 const { InstitutionService } = require('./../services');
 
 const validation = require('./../utils/middlewares/validationHandler');
-const { idSchema } = require('./../utils/schemas/base');
+
 const {
-  createInstitutionSchema,
-  createSubjectSchema
-} = require('./../utils/schemas/institution');
+  InstitutionSchema,
+  SubjectSchema,
+  BaseSchema
+} = require('./../utils/schemas');
 
 const passport = require('passport');
 require('./../utils/auth/strategies/jwt');
@@ -29,7 +30,7 @@ router.get('/', async function(req, res, next) {
 router.post(
   '/',
   passport.authenticate('jwt', { session: false }),
-  validation(createInstitutionSchema),
+  validation(InstitutionSchema.createOne),
   async function(req, res, next) {
     try {
       const data = await InstitutionService.createOne({
@@ -48,7 +49,7 @@ router.post(
 
 router.get(
   '/:_id/subjects',
-  validation({ _id: idSchema }, 'params'),
+  validation({ _id: BaseSchema.id }, 'params'),
   async function(req, res, next) {
     try {
       const { _id } = req.params;
@@ -67,8 +68,8 @@ router.get(
 router.post(
   '/:_id/subjects',
   passport.authenticate('jwt', { session: false }),
-  validation({ _id: idSchema }, 'params'),
-  validation(createSubjectSchema),
+  validation({ _id: BaseSchema.id }, 'params'),
+  validation(SubjectSchema.createOne),
   async function(req, res, next) {
     try {
       const { _id } = req.params;

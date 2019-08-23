@@ -1,43 +1,39 @@
-const { idSchema } = require('./base');
+const BaseSchema = require('./base');
 const Joi = require('@hapi/joi');
 
-const createNoteSchema = Joi.object().keys({
+const createOne = Joi.object().keys({
   title: Joi.string().required(),
   description: Joi.string()
     .allow('')
     .optional(),
-  googleFolderId: Joi.string().required(),
-  codeNote: idSchema,
-  codeYear: idSchema,
-  subject: idSchema
+  codeNote: BaseSchema.id,
+  codeYear: BaseSchema.id,
+  subject: BaseSchema.id
 });
 
-const updateNoteSchema = Joi.object().keys({
+const updateOne = Joi.object().keys({
   title: Joi.string()
     .allow('')
     .optional(),
   description: Joi.string()
     .allow('')
     .optional(),
-  googleFolderId: Joi.string()
-    .allow('')
-    .optional(),
-  codeNote: idSchema.optional(),
-  codeYear: idSchema.optional(),
-  subject: idSchema.optional()
+  codeNote: BaseSchema.id.optional(),
+  codeYear: BaseSchema.id.optional(),
+  subject: BaseSchema.id.optional()
 });
 
-const filterNoteSchema = Joi.object().keys({
-  codeYear: idSchema.optional(),
-  codeNote: idSchema.optional(),
-  subject: idSchema.optional(),
-  institution: idSchema.optional(),
+const filterParams = Joi.object().keys({
+  codeYear: BaseSchema.id.optional(),
+  codeNote: BaseSchema.id.optional(),
+  subject: BaseSchema.id.optional(),
+  institution: BaseSchema.id.optional(),
   search: Joi.string().optional(),
   page: Joi.string().optional()
 });
 
 module.exports = {
-  createNoteSchema,
-  updateNoteSchema,
-  filterNoteSchema
+  createOne,
+  updateOne,
+  filterParams
 };

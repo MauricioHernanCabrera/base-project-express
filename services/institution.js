@@ -5,7 +5,7 @@ const removeAccent = require('./../utils/removeAccent');
 
 const getAll = () => {
   return InstitutionModel.find()
-    .select('name')
+    .select(['name', 'nameSort', '_id'])
     .sort({ nameSort: 1 });
 };
 
@@ -19,7 +19,7 @@ const getSubjects = async ({ _id }) => {
     .orFail(boom.notFound('No se encontro la institución'))
     .populate({
       path: 'subjects',
-      select: ['name', '_id']
+      select: ['name', 'nameSort', '_id']
     });
   return institution.subjects;
 };

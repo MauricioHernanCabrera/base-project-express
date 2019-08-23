@@ -10,8 +10,7 @@ passport.use(
       const filter = {
         username
       };
-
-      const user = await UserService.getOne({ filter });
+      const user = await UserService.getOne({ filter, withFail: false });
 
       if (!user) {
         return cb(boom.unauthorized(), false);

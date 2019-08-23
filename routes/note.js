@@ -1,20 +1,15 @@
 const express = require('express');
 const router = express();
 
-const { NoteService } = require('./../services');
-
 const validation = require('./../utils/middlewares/validationHandler');
-const {
-  createNoteSchema,
-  updateNoteSchema,
-  filterNoteSchema
-} = require('./../utils/schemas/note');
-const { idSchema } = require('./../utils/schemas/base');
+
+const { NoteService } = require('./../services');
+const { BaseSchema, NoteSchema } = require('./../utils/schemas');
 
 const passport = require('passport');
 require('./../utils/auth/strategies/jwt');
 
-router.get('/', validation(filterNoteSchema, 'query'), async function(
+router.get('/', validation(NoteSchema.filterParams, 'query'), async function(
   req,
   res,
   next
@@ -24,11 +19,7 @@ router.get('/', validation(filterNoteSchema, 'query'), async function(
       const page = parseInt(req.query.page) || 0;
       delete req.query.page;
       const filter = req.query;
-      const notes = await NoteService.getAll({ page, user, filter });
-
-      const data = { notes };
-
-      if (notes.length == 20) data.nextPage = page + 1;
+      const data = await NoteService.getAll({ page, user, filter });
 
       res.status(200).json({
         data,
@@ -42,7 +33,7 @@ router.get('/', validation(filterNoteSchema, 'query'), async function(
 
 router.post(
   '/',
-  validation(createNoteSchema),
+  validation(NoteSchema.createOne),
   passport.authenticate('jwt', { session: false }),
   async function(req, res, next) {
     try {
@@ -62,31 +53,31 @@ router.post(
   }
 );
 
-router.get('/:_id', validation({ _id: idSchema }, 'params'), async function(
-  req,
-  res,
-  next
-) {
-  passport.authenticate('jwt', async function(error, user) {
-    try {
-      const { _id } = req.params;
-      const data = await NoteService.getOne({ _id, user });
+router.get(
+  '/:_id',
+  validation({ _id: BaseSchema.id }, 'params'),
+  async function(req, res, next) {
+    passport.authenticate('jwt', async function(error, user) {
+      try {
+        const { _id } = req.params;
+        const data = await NoteService.getOne({ _id, user });
 
-      res.status(200).json({
-        data,
-        message: '¡Apunte recuperado!'
-      });
-    } catch (err) {
-      next(err);
-    }
-  })(req, res, next);
-});
+        res.status(200).json({
+          data,
+          message: '¡Apunte recuperado!'
+        });
+      } catch (err) {
+        next(err);
+      }
+    })(req, res, next);
+  }
+);
 
 router.patch(
   '/:_id',
   passport.authenticate('jwt', { session: false }),
-  validation({ _id: idSchema }, 'params'),
-  validation(updateNoteSchema),
+  validation({ _id: BaseSchema.id }, 'params'),
+  validation(NoteSchema.updateOne),
   async function(req, res, next) {
     try {
       const { _id } = req.params;
@@ -106,7 +97,7 @@ router.patch(
 router.delete(
   '/:_id',
   passport.authenticate('jwt', { session: false }),
-  validation({ _id: idSchema }, 'params'),
+  validation({ _id: BaseSchema.id }, 'params'),
   async function(req, res, next) {
     try {
       const { _id } = req.params;
@@ -125,7 +116,7 @@ router.delete(
 
 router.post(
   '/:_id/favorites',
-  validation({ _id: idSchema }, 'params'),
+  validation({ _id: BaseSchema.id }, 'params'),
   passport.authenticate('jwt', { session: false }),
   async function(req, res, next) {
     try {
@@ -145,7 +136,7 @@ router.post(
 
 router.delete(
   '/:_id/favorites',
-  validation({ _id: idSchema }, 'params'),
+  validation({ _id: BaseSchema.id }, 'params'),
   passport.authenticate('jwt', { session: false }),
   async function(req, res, next) {
     try {
@@ -165,7 +156,7 @@ router.delete(
 
 router.post(
   '/:_id/saved',
-  validation({ _id: idSchema }, 'params'),
+  validation({ _id: BaseSchema.id }, 'params'),
   passport.authenticate('jwt', { session: false }),
   async function(req, res, next) {
     try {
@@ -185,7 +176,7 @@ router.post(
 
 router.delete(
   '/:_id/saved',
-  validation({ _id: idSchema }, 'params'),
+  validation({ _id: BaseSchema.id }, 'params'),
   passport.authenticate('jwt', { session: false }),
   async function(req, res, next) {
     try {
