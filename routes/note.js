@@ -1,35 +1,33 @@
 const express = require('express');
 const router = express();
-
 const validation = require('./../utils/middlewares/validationHandler');
-
+const { createFile, authorize, getFolderApuntus } = require('./../utils/gapi');
 const { NoteService } = require('./../services');
 const { BaseSchema, NoteSchema } = require('./../utils/schemas');
-
 const passport = require('passport');
 require('./../utils/auth/strategies/jwt');
 
-router.get('/', validation(NoteSchema.filterParams, 'query'), async function(
-  req,
-  res,
-  next
-) {
-  passport.authenticate('jwt', async function(error, user) {
-    try {
-      const page = parseInt(req.query.page) || 0;
-      delete req.query.page;
-      const filter = req.query;
-      const data = await NoteService.getAll({ page, user, filter });
+router.get(
+  '/',
+  validation(NoteSchema.filterParams, 'query'), //prettier-ignore
+  async function(req, res, next) {
+    passport.authenticate('jwt', async function(error, user) {
+      try {
+        const page = parseInt(req.query.page) || 0;
+        delete req.query.page;
+        const filter = req.query;
+        const data = await NoteService.getAll({ page, user, filter });
 
-      res.status(200).json({
-        data,
-        message: '¡Apuntes recuperados!'
-      });
-    } catch (err) {
-      next(err);
-    }
-  })(req, res, next);
-});
+        res.status(200).json({
+          data,
+          message: '¡Apuntes recuperados!'
+        });
+      } catch (err) {
+        next(err);
+      }
+    })(req, res, next);
+  }
+);
 
 router.post(
   '/',
@@ -43,6 +41,7 @@ router.post(
           owner: req.user._id
         }
       });
+
       res.status(201).json({
         data,
         message: '¡Apunte creado!'
@@ -60,7 +59,7 @@ router.get(
     passport.authenticate('jwt', async function(error, user) {
       try {
         const { _id } = req.params;
-        const data = await NoteService.getOne({ _id, user });
+        const data = await NoteService.getOne({ filter: { _id, user } });
 
         res.status(200).json({
           data,
@@ -83,7 +82,7 @@ router.patch(
       const { _id } = req.params;
       const { user, body: data } = req;
 
-      await NoteService.updateOne({ _id, user, data });
+      await NoteService.updateOne({ filter: { _id, user }, data });
 
       res.status(200).json({
         message: '¡Apunte actualizado!'
@@ -103,7 +102,7 @@ router.delete(
       const { _id } = req.params;
       const { user } = req;
 
-      await NoteService.deleteOne({ _id, user });
+      await NoteService.deleteOne({ filter: { _id, user } });
 
       res.status(200).json({
         message: '¡Apunte eliminado!'
@@ -123,7 +122,7 @@ router.post(
       const { _id } = req.params;
       const { user } = req;
 
-      await NoteService.addFavorite({ _id, user });
+      await NoteService.addFavorite({ filter: { _id, user } });
 
       res.status(200).json({
         message: '¡Apunte agregado a tus favoritos!'
@@ -143,7 +142,7 @@ router.delete(
       const { _id } = req.params;
       const { user } = req;
 
-      await NoteService.removeFavorite({ _id, user });
+      await NoteService.removeFavorite({ filter: { _id, user } });
 
       res.status(200).json({
         message: '¡Apunte removido de tus favoritos!'
@@ -163,7 +162,7 @@ router.post(
       const { _id } = req.params;
       const { user } = req;
 
-      await NoteService.addSaved({ _id, user });
+      await NoteService.addSaved({ filter: { _id, user } });
 
       res.status(200).json({
         message: '¡Apunte agregado a tus guardados!'
@@ -183,7 +182,7 @@ router.delete(
       const { _id } = req.params;
       const { user } = req;
 
-      await NoteService.removeSaved({ _id, user });
+      await NoteService.removeSaved({ filter: { _id, user } });
 
       res.status(200).json({
         message: '¡Apunte removido de tus guardados!'
@@ -193,5 +192,46 @@ router.delete(
     }
   }
 );
+
+// router.post(
+//   '/:_id/files',
+//   // passport.authenticate('jwt', { session: false }),
+//   async function(req, res, next) {
+//     try {
+//       const { _id } = req.params;
+//       const { user } = req;
+//       const file = req.files[0];
+
+//       console.log(file);
+
+//       const auth = authorize();
+//       const folderApuntus = await getFolderApuntus({ auth });
+
+//       const fileMetadata = {
+//         name: file.originalname,
+//         parents: [folderApuntus.id]
+//       };
+//       const media = {
+//         mimeType: file.mimeType,
+//         body: file
+//       };
+
+//       const resFile = await createFile({
+//         auth,
+//         config: {
+//           resource: fileMetadata,
+//           media
+//         }
+//       });
+
+//       res.status(200).json({
+//         data: resFile,
+//         message: '¡Archivo agregado al apunte!'
+//       });
+//     } catch (error) {
+//       next(error);
+//     }
+//   }
+// );
 
 module.exports = router;

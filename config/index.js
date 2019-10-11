@@ -14,7 +14,9 @@ const config = {
 
   // SOCIAL LOGIN
   facebookClientId: process.env.FACEBOOK_CLIENT_ID,
-  facebookClientSecret: process.env.FACEBOOK_CLIENT_SECRET
+  facebookClientSecret: process.env.FACEBOOK_CLIENT_SECRET,
+
+  frontUrl: process.env.FRONT_URL
 };
 
 module.exports = { config };

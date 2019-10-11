@@ -7,8 +7,8 @@ const getAll = () => {
     .sort('-name');
 };
 
-const getOne = ({ _id }) => {
-  return CodeYearModel.findById(_id).orFail(
+const getOne = ({ filter }) => {
+  return CodeYearModel.findOne(filter).orFail(
     boom.notFound('¡No se encontro el codigo de año!')
   );
 };

@@ -14,23 +14,25 @@ const createOne = ({ data }) => {
   return InstitutionModel.create({ ...data, nameSort });
 };
 
-const getSubjects = async ({ _id }) => {
-  const institution = await InstitutionModel.findById(_id)
+const getSubjects = async ({ filter }) => {
+  const institution = await InstitutionModel.findOne(filter)
     .orFail(boom.notFound('No se encontro la institución'))
     .populate({
       path: 'subjects',
       select: ['name', 'nameSort', '_id']
     });
+
   return institution.subjects;
 };
 
-const createSubject = async ({ data, _id }) => {
+const createSubject = async ({ data, filter }) => {
   const subjectCreated = await SubjectService.createOne({
     name: data.name,
-    institution: _id
+    institution: filter._id
   });
-  const institutionWithSubject = await InstitutionModel.findOneAndUpdate(
-    { _id, subjects: { $ne: subjectCreated._id } },
+
+  await InstitutionModel.findOneAndUpdate(
+    { _id: filter._id, subjects: { $ne: subjectCreated._id } },
     {
       $push: { subjects: subjectCreated }
     },

@@ -53,7 +53,7 @@ router.get(
   async function(req, res, next) {
     try {
       const { _id } = req.params;
-      const data = await InstitutionService.getSubjects({ _id });
+      const data = await InstitutionService.getSubjects({ filter: { _id } });
 
       res.status(200).json({
         data,
@@ -75,7 +75,7 @@ router.post(
       const { _id } = req.params;
       const data = await InstitutionService.createSubject({
         data: req.body,
-        _id
+        filter: { _id }
       });
 
       res.status(201).json({

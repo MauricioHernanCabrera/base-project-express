@@ -2,7 +2,6 @@ const { UserModel, NoteModel } = require('./../models');
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
 const boom = require('@hapi/boom');
-const { ObjectId } = mongoose.Types;
 
 const getOne = ({
   filter,
@@ -10,17 +9,15 @@ const getOne = ({
   failText = 'No se encontro el usuario',
   withFail = true
 }) => {
-  if (withFail) {
-    return UserModel.findOne(filter)
-      .select(select)
-      .orFail(boom.notFound(failText));
-  } else {
-    return UserModel.findOne(filter).select(select);
-  }
+  let cursor = UserModel.findOne(filter).select(select);
+  if (withFail) cursor = cursor.orFail(boom.notFound(failText));
+
+  return cursor;
 };
 
 const createOne = async ({ data }) => {
   const { username, email, password } = data;
+
   return UserModel.create({
     username,
     email,
@@ -29,9 +26,7 @@ const createOne = async ({ data }) => {
 };
 
 const updateOne = async ({ filter, data }) => {
-  if (data.password) {
-    data.password = await bcrypt.hash(data.password, 10);
-  }
+  if (data.password) data.password = await bcrypt.hash(data.password, 10);
 
   return UserModel.findOneAndUpdate(filter, data, {
     new: true

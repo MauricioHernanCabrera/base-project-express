@@ -4,6 +4,7 @@ const CodeNoteService = require('./codeNote');
 const CodeYearService = require('./codeYear');
 const NoteService = require('./note');
 const SubjectService = require('./subject');
+const AuthService = require('./auth');
 
 module.exports = {
   UserService,
@@ -11,5 +12,6 @@ module.exports = {
   CodeNoteService,
   CodeYearService,
   NoteService,
-  SubjectService
+  SubjectService,
+  AuthService
 };

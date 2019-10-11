@@ -1,5 +1,6 @@
 const { NoteModel, UserModel } = require('./../models');
 
+const axios = require('axios');
 const CodeNoteService = require('./../services/codeNote');
 const CodeYearService = require('./../services/codeYear');
 const SubjectService = require('./../services/subject');
@@ -8,15 +9,40 @@ const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Types;
 const boom = require('@hapi/boom');
 
-const createOne = async ({ data }) => {
-  await CodeNoteService.getOne({ _id: data.codeNote });
-  await CodeYearService.getOne({ _id: data.codeYear });
-  await SubjectService.getOne({ _id: data.subject });
+const {
+  createFolder,
+  MIME_TYPE_FOLDER,
+  getFolderApuntus,
+  authorize,
+  createFile
+} = require('./../utils/gapi');
 
-  const noteCreated = await NoteModel.create({
+const createOne = async ({ data }) => {
+  await CodeNoteService.getOne({ filter: { _id: data.codeNote } });
+  await CodeYearService.getOne({ filter: { _id: data.codeYear } });
+  await SubjectService.getOne({ filter: { _id: data.subject } });
+
+  const noteCreated = new NoteModel({
     ...data,
-    googleFolderId: 'hola23123123'
+    googleFolderId: 'xxx-xxx'
   });
+
+  const auth = authorize();
+  const folderApuntus = await getFolderApuntus({ auth });
+
+  const folder = await createFolder({
+    config: {
+      resource: {
+        name: `${new Date().toJSON()}-${noteCreated.owner}-${noteCreated._id}`,
+        mimeType: MIME_TYPE_FOLDER,
+        parents: [folderApuntus.id]
+      }
+    }
+  });
+
+  noteCreated.googleFolderId = folder.data.id;
+
+  await noteCreated.save();
 
   await UserModel.findOneAndUpdate(
     {
@@ -31,17 +57,24 @@ const createOne = async ({ data }) => {
   return noteCreated;
 };
 
-const deleteOne = ({ _id, user }) => {
+const deleteOne = ({ filter }) => {
+  const { _id, user } = filter;
+
   return NoteModel.findOneAndUpdate(
     { _id, isActive: true, owner: user._id },
     { isActive: false }
   ).orFail(boom.badRequest('¡Fallo al eliminar el apunte!'));
 };
 
-const updateOne = async ({ _id, user, data }) => {
-  if (data.codeNote) await CodeNoteService.getOne({ _id: data.codeNote });
-  if (data.codeYear) await CodeYearService.getOne({ _id: data.codeYear });
-  if (data.subject) await SubjectService.getOne({ _id: data.subject });
+const updateOne = async ({ filter, data }) => {
+  if (data.codeNote)
+    await CodeNoteService.getOne({ filter: { _id: data.codeNote } });
+  if (data.codeYear)
+    await CodeYearService.getOne({ filter: { _id: data.codeYear } });
+  if (data.subject)
+    await SubjectService.getOne({ filter: { _id: data.subject } });
+
+  const { _id, user } = filter;
 
   return NoteModel.findOneAndUpdate(
     { _id, isActive: true, owner: user._id },
@@ -50,7 +83,9 @@ const updateOne = async ({ _id, user, data }) => {
   ).orFail(boom.badRequest('¡Fallo al actualizar el apunte!'));
 };
 
-const getOne = async ({ _id, user = {} }) => {
+const getOne = async ({ filter }) => {
+  const { _id, user = {} } = filter;
+
   return new Promise(async (resolve, reject) => {
     const note = await NoteModel.aggregate()
       .match({ _id: ObjectId(_id), isActive: true })
@@ -92,7 +127,7 @@ const getOne = async ({ _id, user = {} }) => {
   });
 };
 
-const getOnelight = filter => {
+const getOnelight = ({ filter }) => {
   return NoteModel.findOne(filter).orFail(
     boom.notFound('¡No existe el apunte!')
   );
@@ -179,11 +214,13 @@ const getAll = async ({ user = {}, page = 0, limit = 20, filter }) => {
   return data;
 };
 
-const addFavorite = ({ _id, user = {} }) => {
+const addFavorite = ({ filter }) => {
+  const { _id, user = {} } = filter;
+
   return new Promise(async (resolve, reject) => {
     let note = {};
     try {
-      note = await getOnelight({ _id, isActive: true });
+      note = await getOnelight({ filter: { _id, isActive: true } });
     } catch (error) {
       reject(error);
     }
@@ -209,11 +246,13 @@ const addFavorite = ({ _id, user = {} }) => {
   });
 };
 
-const removeFavorite = ({ _id, user = {} }) => {
+const removeFavorite = ({ filter }) => {
+  const { _id, user = {} } = filter;
+
   return new Promise(async (resolve, reject) => {
     let note = {};
     try {
-      note = await getOnelight({ _id, isActive: true });
+      note = await getOnelight({ filter: { _id, isActive: true } });
     } catch (error) {
       reject(error);
     }
@@ -246,11 +285,13 @@ const removeFavorite = ({ _id, user = {} }) => {
   });
 };
 
-const addSaved = ({ _id, user = {} }) => {
+const addSaved = ({ filter }) => {
+  const { _id, user = {} } = filter;
+
   return new Promise(async (resolve, reject) => {
     let note = {};
     try {
-      note = await getOnelight({ _id, isActive: true });
+      note = await getOnelight({ filter: { _id, isActive: true } });
     } catch (error) {
       reject(error);
     }
@@ -276,11 +317,13 @@ const addSaved = ({ _id, user = {} }) => {
   });
 };
 
-const removeSaved = ({ _id, user = {} }) => {
+const removeSaved = ({ filter }) => {
+  const { _id, user = {} } = filter;
+
   return new Promise(async (resolve, reject) => {
     let note = {};
     try {
-      note = await getOnelight({ _id, isActive: true });
+      note = await getOnelight({ filter: { _id, isActive: true } });
     } catch (error) {
       reject(error);
     }
@@ -313,6 +356,21 @@ const removeSaved = ({ _id, user = {} }) => {
   });
 };
 
+const addFile = ({ _id }, { file }) => {
+  // return createFile({
+  //   config: {
+  //     resource: {
+  //       name: 'photo.jpg',
+  //       parents: [folder.data.id]
+  //     },
+  //     media: {
+  //       mimeType: 'image/jpeg',
+  //       body: file
+  //     }
+  //   }
+  // });
+};
+
 module.exports = {
   createOne,
   getOne,
@@ -323,5 +381,6 @@ module.exports = {
   addSaved,
   removeSaved,
   deleteOne,
-  updateOne
+  updateOne,
+  addFile
 };
