@@ -18,7 +18,10 @@ router.get(
       const { _id } = req.params;
       const { noteName = 'created' } = req.query;
 
-      const data = await UserService.getAllNotes({ _id, noteName, page });
+      const data = await UserService.getAllNotes({
+        filter: { noteName, _id },
+        paginate: { page }
+      });
 
       res.status(200).json({
         data,

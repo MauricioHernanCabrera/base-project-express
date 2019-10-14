@@ -2,6 +2,7 @@ const { UserModel, NoteModel } = require('./../models');
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
 const boom = require('@hapi/boom');
+const makePaginate = require('./../utils/paginate');
 
 const getOne = ({
   filter,
@@ -33,22 +34,24 @@ const updateOne = async ({ filter, data }) => {
   });
 };
 
-const getAllNotes = async ({ _id, page = 0, limit = 20, noteName }) => {
+const getAllNotes = async ({ filter, paginate }) => {
+  const limit = 12;
   const notesOfTheUser = await UserModel.findOne({
     isActive: true,
-    _id
-  }).select(noteName);
+    _id: filter._id
+  }).select(filter.noteName);
 
-  const notesSorted = notesOfTheUser[noteName]
+  const notesSorted = notesOfTheUser[filter.noteName]
     .slice()
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-  const skip = page == 0 ? 0 : page * limit;
+  const skip = paginate.page == 0 ? 0 : paginate.page * limit;
   const notesPaginated = notesSorted.slice(skip, skip + limit);
 
   const notesPopulates = await NoteModel.populate(notesPaginated, [
     {
       path: 'note',
+      select: '-favorites -saved',
       populate: [
         {
           path: 'codeYear'
@@ -60,7 +63,7 @@ const getAllNotes = async ({ _id, page = 0, limit = 20, noteName }) => {
           path: 'subject',
           populate: {
             path: 'institution',
-            select: '-subjects'
+            select: '-subjects -nameSort -createdAt -updatedAt'
           }
         },
         {
@@ -73,8 +76,14 @@ const getAllNotes = async ({ _id, page = 0, limit = 20, noteName }) => {
 
   const data = {};
 
-  if (notesPopulates.length == limit) data.nextPage = page + 1;
-  data.array = notesPopulates;
+  data.total = notesSorted.length;
+  if (notesPopulates.length == limit) data.nextPage = paginate.page + 1;
+
+  data.array = [...notesPopulates].map(({ note, createdAt, updatedAt }) => ({
+    ...note._doc,
+    createdAt,
+    updatedAt
+  }));
 
   return data;
 };
