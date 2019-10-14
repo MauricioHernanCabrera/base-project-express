@@ -83,7 +83,7 @@ const getRandomString = (length = 36) => {
     const subjectsPromises = institutions.map((institution, index) => {
       return InstitutionService.createSubject({
         data: subjectsData[index],
-        _id: institution._id
+        filter: { _id: institution._id }
       });
     });
 
@@ -92,31 +92,31 @@ const getRandomString = (length = 36) => {
     const subjects = await Promise.all(subjectsPromises);
     const users = await UserModel.find({});
 
-    const notesPromises = [];
+    // const notesPromises = [];
 
-    for (let i = 0; i < users.length; i++) {
-      for (let j = 0; j < 20; j++) {
-        notesPromises.push(
-          NoteService.createOne({
-            data: {
-              title: getRandomString(getRandomInt(30, 80)),
-              description: getRandomString(getRandomInt(100, 500)),
-              googleFolderId: '123456789',
-              codeNote: String(
-                codeNotes[getRandomInt(0, codeNotes.length)]._id
-              ),
-              codeYear: String(
-                codeYears[getRandomInt(0, codeYears.length)]._id
-              ),
-              subject: String(subjects[getRandomInt(0, subjects.length)]._id),
-              owner: String(users[i]._id)
-            }
-          })
-        );
-      }
-    }
+    // for (let i = 0; i < users.length; i++) {
+    //   for (let j = 0; j < 20; j++) {
+    //     notesPromises.push(
+    //       NoteService.createOne({
+    //         data: {
+    //           title: getRandomString(getRandomInt(30, 80)),
+    //           description: getRandomString(getRandomInt(100, 500)),
+    //           googleFolderId: '123456789',
+    //           codeNote: String(
+    //             codeNotes[getRandomInt(0, codeNotes.length)]._id
+    //           ),
+    //           codeYear: String(
+    //             codeYears[getRandomInt(0, codeYears.length)]._id
+    //           ),
+    //           subject: String(subjects[getRandomInt(0, subjects.length)]._id),
+    //           owner: String(users[i]._id)
+    //         }
+    //       })
+    //     );
+    //   }
+    // }
 
-    const notes = await Promise.all(notesPromises);
+    // const notes = await Promise.all(notesPromises);
   } catch (error) {
     console.log(error);
   } finally {

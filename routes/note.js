@@ -244,7 +244,8 @@ router.get(
       const { _id } = req.params;
 
       const data = await NoteService.getTheListOfNoteFiles({
-        paginate: { pageSize, pageToken }
+        paginate: { pageSize, pageToken },
+        filter: { _id }
       });
 
       res.status(200).json({

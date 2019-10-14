@@ -5,7 +5,7 @@ const boom = require('@hapi/boom');
 const getOne = ({
   filter,
   select = '',
-  failText = 'No se encontro el usuario',
+  failText = '¡No se encontro el usuario!',
   withFail = true
 }) => {
   let cursor = UserModel.findOne(filter).select(select);
@@ -32,7 +32,7 @@ const updateOne = async ({ filter, data }) => {
   });
 };
 
-const getAllNotes = async ({ filter, paginate }) => {
+const getNoteList = async ({ filter, paginate }) => {
   const limit = 12;
   const notesOfTheUser = await UserModel.findOne({
     isActive: true,
@@ -79,11 +79,13 @@ const getAllNotes = async ({ filter, paginate }) => {
   data.total = notesSorted.length;
   if (notesPopulates.length == limit) data.nextPage = paginate.page + 1;
 
-  data.array = [...notesPopulates].map(({ note, createdAt, updatedAt }) => ({
-    ...note._doc,
-    createdAt,
-    updatedAt
-  }));
+  data.array = [...notesPopulates]
+    .filter(({ note }) => (note ? true : false))
+    .map(({ note, createdAt, updatedAt }) => ({
+      ...note._doc,
+      createdAt,
+      updatedAt
+    }));
 
   return data;
 };
@@ -91,6 +93,6 @@ const getAllNotes = async ({ filter, paginate }) => {
 module.exports = {
   getOne,
   createOne,
-  getAllNotes,
+  getNoteList,
   updateOne
 };

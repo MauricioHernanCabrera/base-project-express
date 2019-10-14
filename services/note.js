@@ -319,15 +319,17 @@ const removeSaved = ({ filter }) => {
   });
 };
 
-const getTheListOfNoteFiles = ({ paginate }) => {
-  const { pageSize, pageToken } = paginate;
+const getTheListOfNoteFiles = async ({ paginate, filter }) => {
+  const { pageSize = 12, pageToken } = paginate;
+
+  const note = await getOne({ filter });
 
   return getFileList({
     config: {
-      fields: `nextPageToken, files(id, name, webViewLink, mimeType)`,
+      fields: `nextPageToken, files(id, name, webViewLink)`,
       pageSize,
       pageToken,
-      q: `not trashed and '${'16x1_zXaMtbM9c3591wUNiM9qElT2zheb'}' in parents`
+      q: `not trashed and '${note.googleFolderId}' in parents`
     }
   });
 };
@@ -346,7 +348,7 @@ const addFile = async ({ filter, data }) => {
     body: fs.createReadStream(file.path)
   };
 
-  createFile({
+  await createFile({
     config: {
       resource,
       media
