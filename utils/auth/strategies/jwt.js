@@ -5,6 +5,7 @@ const { config } = require('../../../config');
 const { UserService } = require('./../../../services');
 
 passport.use(
+  'jwt',
   new Strategy(
     {
       secretOrKey: config.authJwtSecret,
@@ -26,7 +27,12 @@ passport.use(
         });
 
         if (!user) {
-          return cb(boom.unauthorized(), false);
+          return cb(
+            boom.unauthorized(
+              '¡No estas autorizado para realizar esta acción!'
+            ),
+            false
+          );
         }
 
         return cb(null, user);

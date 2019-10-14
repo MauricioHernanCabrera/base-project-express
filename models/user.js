@@ -103,7 +103,6 @@ UserSchema.post('save', handleUniqueValidator);
 //       'facebookProvider.id': profile.id
 //     },
 //     async (err, user) => {
-//       console.log(profile);
 
 //       if (!user) {
 //         const newUser = this({

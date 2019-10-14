@@ -11,12 +11,14 @@ router.get(
   '/',
   validation(NoteSchema.filterParams, 'query'), //prettier-ignore
   async function(req, res, next) {
-    passport.authenticate('jwt', async function(error, user) {
+    passport.authenticate('jwt', async function(error, user = {}) {
       try {
         const page = parseInt(req.query.page) || 0;
-        delete req.query.page;
-        const filter = req.query;
-        const data = await NoteService.getAll({ page, user, filter });
+
+        const data = await NoteService.getAll({
+          filter: { ...req.query, user },
+          paginate: { page }
+        });
 
         res.status(200).json({
           data,
@@ -36,10 +38,7 @@ router.post(
   async function(req, res, next) {
     try {
       const data = await NoteService.createOne({
-        data: {
-          ...req.body,
-          owner: req.user._id
-        }
+        data: { ...req.body, owner: req.user._id }
       });
 
       res.status(201).json({
@@ -201,8 +200,6 @@ router.delete(
 //       const { _id } = req.params;
 //       const { user } = req;
 //       const file = req.files[0];
-
-//       console.log(file);
 
 //       const auth = authorize();
 //       const folderApuntus = await getFolderApuntus({ auth });

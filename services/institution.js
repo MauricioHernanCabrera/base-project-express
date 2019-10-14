@@ -9,6 +9,12 @@ const getAll = () => {
     .sort({ nameSort: 1 });
 };
 
+const getOne = ({ filter }) => {
+  return InstitutionModel.find(filter).orFail(
+    '¡No se encontro la institución!'
+  );
+};
+
 const createOne = ({ data }) => {
   const nameSort = removeAccent(data.name);
   return InstitutionModel.create({ ...data, nameSort });
@@ -26,23 +32,23 @@ const getSubjects = async ({ filter }) => {
 };
 
 const createSubject = async ({ data, filter }) => {
+  const { name } = data;
+  const { _id } = filter;
+
   const subjectCreated = await SubjectService.createOne({
-    name: data.name,
-    institution: filter._id
+    data: { name, institution: _id }
   });
 
   await InstitutionModel.findOneAndUpdate(
-    { _id: filter._id, subjects: { $ne: subjectCreated._id } },
+    { _id, subjects: { $ne: subjectCreated._id } },
     {
       $push: { subjects: subjectCreated }
     },
     { new: true }
-  )
-    .populate({
-      path: 'subjects',
-      sort: 'nameSort'
-    })
-    .orFail(boom.badRequest('Fallo al agregar materia a la institution'));
+  ).populate({
+    path: 'subjects',
+    sort: 'nameSort'
+  });
 
   return subjectCreated;
 };
@@ -51,5 +57,6 @@ module.exports = {
   getAll,
   createOne,
   getSubjects,
-  createSubject
+  createSubject,
+  getOne
 };

@@ -1,12 +1,11 @@
 const { NoteModel, UserModel } = require('./../models');
-
-const axios = require('axios');
 const CodeNoteService = require('./../services/codeNote');
 const CodeYearService = require('./../services/codeYear');
 const SubjectService = require('./../services/subject');
 
 const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Types;
+
 const boom = require('@hapi/boom');
 
 const {
@@ -16,6 +15,7 @@ const {
   authorize,
   createFile
 } = require('./../utils/gapi');
+const makePaginate = require('./../utils/paginate');
 
 const createOne = async ({ data }) => {
   await CodeNoteService.getOne({ filter: { _id: data.codeNote } });
@@ -87,54 +87,19 @@ const getOne = async ({ filter }) => {
   const { _id, user = {} } = filter;
 
   return new Promise(async (resolve, reject) => {
-    const note = await NoteModel.aggregate()
-      .match({ _id: ObjectId(_id), isActive: true })
-      .addFields({
-        countFavorites: { $size: '$favorites' },
-        countSaved: { $size: '$saved' },
-        isFavorite: { $in: [user._id, '$favorites.user'] },
-        isSaved: { $in: [user._id, '$saved.user'] }
-      })
-      .project({
-        saved: 0,
-        favorites: 0
-      });
+    const data = await getAll({ filter: { _id, user } });
 
-    const notePopulate = await NoteModel.populate(note, [
-      'codeNote',
-      'codeYear',
-      {
-        path: 'owner',
-        select: ['email', 'username', '_id']
-      },
-      {
-        path: 'subject',
-        select: ['name', '_id', 'institution'],
-        populate: [
-          {
-            path: 'institution',
-            select: ['name', '_id']
-          }
-        ]
-      }
-    ]);
-
-    if (notePopulate && notePopulate[0]) {
-      resolve(notePopulate[0]);
+    if (data.array[0]) {
+      resolve(data.array[0]);
     } else {
       reject(boom.notFound('¡No se encontro el apunte!'));
     }
   });
 };
 
-const getOnelight = ({ filter }) => {
-  return NoteModel.findOne(filter).orFail(
-    boom.notFound('¡No existe el apunte!')
-  );
-};
-
-const getAll = async ({ user = {}, page = 0, limit = 20, filter }) => {
+const getAll = async ({ filter, paginate, sort = '' }) => {
   const customFilter = {};
+  if (filter._id) customFilter['_id'] = ObjectId(filter._id);
   if (filter.codeNote) customFilter['codeNote'] = ObjectId(filter.codeNote);
   if (filter.codeYear) customFilter['codeYear'] = ObjectId(filter.codeYear);
   if (filter.subject) customFilter['subject._id'] = ObjectId(filter.subject);
@@ -143,7 +108,11 @@ const getAll = async ({ user = {}, page = 0, limit = 20, filter }) => {
 
   if (filter.search)
     customFilter['$or'] = [
-      { title: { $regex: new RegExp(filter.search.toLowerCase(), 'i') } },
+      {
+        title: {
+          $regex: new RegExp(filter.search.toLowerCase(), 'i')
+        }
+      },
       {
         description: {
           $regex: new RegExp(filter.search.toLowerCase(), 'i')
@@ -151,16 +120,16 @@ const getAll = async ({ user = {}, page = 0, limit = 20, filter }) => {
       }
     ];
 
-  const notesFiltered = await NoteModel.aggregate()
+  let cursor = null;
+
+  cursor = NoteModel.aggregate()
     .lookup({
       from: 'subjects',
       localField: 'subject',
       foreignField: '_id',
       as: 'subject'
     })
-    .addFields({
-      subject: { $arrayElemAt: ['$subject', 0] }
-    })
+    .addFields({ subject: { $arrayElemAt: ['$subject', 0] } })
     .lookup({
       from: 'institutions',
       localField: 'subject.institution',
@@ -168,50 +137,46 @@ const getAll = async ({ user = {}, page = 0, limit = 20, filter }) => {
       as: 'subject.institution'
     })
     .addFields({
-      'subject.institution': { $arrayElemAt: ['$subject.institution', 0] }
+      'subject.institution': {
+        $arrayElemAt: ['$subject.institution', 0]
+      }
     })
-    .match({
-      isActive: true,
-      ...customFilter
-    })
+    .match({ isActive: true, ...customFilter })
+    .addFields({ countFavorites: { $size: '$favorites' } })
+    .sort({ countFavorites: -1, createdAt: -1 })
     .addFields({
-      countFavorites: { $size: '$favorites' }
-    })
-    .sort({
-      countFavorites: -1,
-      createdAt: -1
-    })
-    .addFields({
-      isFavorite: { $in: [user._id, '$favorites.user'] },
-      isSaved: { $in: [user._id, '$saved.user'] }
+      isFavorite: { $in: [filter.user._id, '$favorites.user'] },
+      isSaved: { $in: [filter.user._id, '$saved.user'] }
     })
     .project({
       saved: 0,
       favorites: 0,
-      'subject.institution.subjects': 0
+      subject: {
+        nameSort: 0,
+        updatedAt: 0,
+        createdAt: 0,
+        institution: {
+          subjects: 0,
+          nameSort: 0,
+          updatedAt: 0,
+          createdAt: 0
+        }
+      }
     });
 
-  const skip = page == 0 ? 0 : page * limit;
-  const notesPaginated = notesFiltered.slice(skip, skip + limit);
-  const notesPopulates = await NoteModel.populate(notesPaginated, [
-    {
-      path: 'owner',
-      select: ['email', 'username', '_id']
-    },
-    {
-      path: 'codeYear'
-    },
-    {
-      path: 'codeNote'
-    }
+  const paginateNotes = await makePaginate({
+    ...paginate,
+    cursor,
+    mongooseModel: NoteModel
+  });
+
+  paginateNotes.array = await NoteModel.populate(paginateNotes.array, [
+    { path: 'owner', select: ['email', 'username', '_id'] },
+    { path: 'codeYear' },
+    { path: 'codeNote' }
   ]);
 
-  const data = {};
-
-  if (notesPopulates.length == limit) data.nextPage = page + 1;
-  data.array = notesPopulates;
-
-  return data;
+  return paginateNotes;
 };
 
 const addFavorite = ({ filter }) => {
@@ -220,22 +185,18 @@ const addFavorite = ({ filter }) => {
   return new Promise(async (resolve, reject) => {
     let note = {};
     try {
-      note = await getOnelight({ filter: { _id, isActive: true } });
+      note = await getOne({ filter: { _id } });
     } catch (error) {
       reject(error);
     }
 
     const noteFavorite = await NoteModel.findOneAndUpdate(
       { _id, 'favorites.user': { $ne: user._id } },
-      {
-        $push: { favorites: { user: user } }
-      }
+      { $push: { favorites: { user: user } } }
     );
     const userFavorite = await UserModel.findOneAndUpdate(
       { _id: user._id, 'favorites.note': { $ne: note._id } },
-      {
-        $push: { favorites: { note: note } }
-      }
+      { $push: { favorites: { note: note } } }
     );
 
     if (!noteFavorite || !userFavorite) {
@@ -252,7 +213,7 @@ const removeFavorite = ({ filter }) => {
   return new Promise(async (resolve, reject) => {
     let note = {};
     try {
-      note = await getOnelight({ filter: { _id, isActive: true } });
+      note = await getOne({ filter: { _id } });
     } catch (error) {
       reject(error);
     }
@@ -291,7 +252,7 @@ const addSaved = ({ filter }) => {
   return new Promise(async (resolve, reject) => {
     let note = {};
     try {
-      note = await getOnelight({ filter: { _id, isActive: true } });
+      note = await getOne({ filter: { _id } });
     } catch (error) {
       reject(error);
     }
@@ -323,7 +284,7 @@ const removeSaved = ({ filter }) => {
   return new Promise(async (resolve, reject) => {
     let note = {};
     try {
-      note = await getOnelight({ filter: { _id, isActive: true } });
+      note = await getOne({ filter: { _id } });
     } catch (error) {
       reject(error);
     }
@@ -356,31 +317,30 @@ const removeSaved = ({ filter }) => {
   });
 };
 
-const addFile = ({ _id }, { file }) => {
-  // return createFile({
-  //   config: {
-  //     resource: {
-  //       name: 'photo.jpg',
-  //       parents: [folder.data.id]
-  //     },
-  //     media: {
-  //       mimeType: 'image/jpeg',
-  //       body: file
-  //     }
-  //   }
-  // });
-};
+// const addFile = ({ _id }, { file }) => {
+//   // return createFile({
+//   //   config: {
+//   //     resource: {
+//   //       name: 'photo.jpg',
+//   //       parents: [folder.data.id]
+//   //     },
+//   //     media: {
+//   //       mimeType: 'image/jpeg',
+//   //       body: file
+//   //     }
+//   //   }
+//   // });
+// };
 
 module.exports = {
   createOne,
   getOne,
-  getOnelight,
   getAll,
   addFavorite,
   removeFavorite,
   addSaved,
   removeSaved,
   deleteOne,
-  updateOne,
-  addFile
+  updateOne
+  // addFile
 };
