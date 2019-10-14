@@ -21,19 +21,10 @@ const authorize = () => {
   return oAuth2Client;
 };
 
-const listFiles = (payload = {}) => {
-  const {
-    auth = authorize(),
-    fields = 'nextPageToken, files(id, name)',
-    pageSize = 100
-  } = payload;
-
+const getFileList = async (payload = {}) => {
+  const { auth = authorize(), config } = payload;
   const drive = google.drive({ version: 'v3', auth });
-
-  return drive.files.list({
-    pageSize,
-    fields
-  });
+  return (await drive.files.list(config)).data;
 };
 
 const getFolderApuntus = async (payload = {}) => {
@@ -86,7 +77,7 @@ const createFile = (payload = {}) => {
 };
 
 module.exports = {
-  listFiles,
+  getFileList,
   getFolderApuntus,
   createPermission,
   createFolder,

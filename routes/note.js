@@ -1,11 +1,28 @@
 const express = require('express');
 const router = express();
 const validation = require('./../utils/middlewares/validationHandler');
-const { createFile, authorize, getFolderApuntus } = require('./../utils/gapi');
 const { NoteService } = require('./../services');
 const { BaseSchema, NoteSchema } = require('./../utils/schemas');
 const passport = require('passport');
 require('./../utils/auth/strategies/jwt');
+const multer = require('multer');
+const uuidv4 = require('uuid/v4');
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: function(req, file, cb) {
+      cb(null, './public');
+    },
+    filename: function(req, file, cb) {
+      const random = uuidv4();
+      const name = `${req.user._id}-${random}-${file.originalname}`;
+      cb(null, name);
+    }
+  }),
+  limits: {
+    fileSize: 1024 * 1024 * 100
+  }
+});
 
 router.get(
   '/',
@@ -192,43 +209,52 @@ router.delete(
   }
 );
 
-// router.post(
-//   '/:_id/files',
-//   // passport.authenticate('jwt', { session: false }),
-//   async function(req, res, next) {
-//     try {
-//       const { _id } = req.params;
-//       const { user } = req;
-//       const file = req.files[0];
+router.post(
+  '/:_id/files',
+  passport.authenticate('jwt', { session: false }),
+  upload.single('file'),
+  async function(req, res, next) {
+    try {
+      const { _id } = req.params;
+      const { user } = req;
 
-//       const auth = authorize();
-//       const folderApuntus = await getFolderApuntus({ auth });
+      const data = await NoteService.addFile({
+        filter: { _id, user },
+        data: {
+          file: req.file
+        }
+      });
 
-//       const fileMetadata = {
-//         name: file.originalname,
-//         parents: [folderApuntus.id]
-//       };
-//       const media = {
-//         mimeType: file.mimeType,
-//         body: file
-//       };
+      res.status(200).json({
+        data,
+        message: '¡Archivo agregado al apunte!'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
-//       const resFile = await createFile({
-//         auth,
-//         config: {
-//           resource: fileMetadata,
-//           media
-//         }
-//       });
+router.get(
+  '/:_id/files',
+  // passport.authenticate('jwt', { session: false }),
+  async function(req, res, next) {
+    try {
+      const { pageSize, pageToken } = req.query;
+      const { _id } = req.params;
 
-//       res.status(200).json({
-//         data: resFile,
-//         message: '¡Archivo agregado al apunte!'
-//       });
-//     } catch (error) {
-//       next(error);
-//     }
-//   }
-// );
+      const data = await NoteService.getTheListOfNoteFiles({
+        paginate: { pageSize, pageToken }
+      });
+
+      res.status(200).json({
+        data,
+        message: '¡Archivos recuperados!'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 module.exports = router;

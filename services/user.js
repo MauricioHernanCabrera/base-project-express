@@ -1,8 +1,6 @@
 const { UserModel, NoteModel } = require('./../models');
 const bcrypt = require('bcrypt');
-const mongoose = require('mongoose');
 const boom = require('@hapi/boom');
-const makePaginate = require('./../utils/paginate');
 
 const getOne = ({
   filter,
@@ -39,7 +37,9 @@ const getAllNotes = async ({ filter, paginate }) => {
   const notesOfTheUser = await UserModel.findOne({
     isActive: true,
     _id: filter._id
-  }).select(filter.noteName);
+  })
+    .select(filter.noteName)
+    .orFail(boom.notFound('¡No existe el usuario!'));
 
   const notesSorted = notesOfTheUser[filter.noteName]
     .slice()

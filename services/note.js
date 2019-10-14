@@ -6,6 +6,7 @@ const SubjectService = require('./../services/subject');
 const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Types;
 
+const fs = require('fs');
 const boom = require('@hapi/boom');
 
 const {
@@ -13,7 +14,8 @@ const {
   MIME_TYPE_FOLDER,
   getFolderApuntus,
   authorize,
-  createFile
+  createFile,
+  getFileList
 } = require('./../utils/gapi');
 const makePaginate = require('./../utils/paginate');
 
@@ -317,20 +319,44 @@ const removeSaved = ({ filter }) => {
   });
 };
 
-// const addFile = ({ _id }, { file }) => {
-//   // return createFile({
-//   //   config: {
-//   //     resource: {
-//   //       name: 'photo.jpg',
-//   //       parents: [folder.data.id]
-//   //     },
-//   //     media: {
-//   //       mimeType: 'image/jpeg',
-//   //       body: file
-//   //     }
-//   //   }
-//   // });
-// };
+const getTheListOfNoteFiles = ({ paginate }) => {
+  const { pageSize, pageToken } = paginate;
+
+  return getFileList({
+    config: {
+      fields: `nextPageToken, files(id, name, webViewLink, mimeType)`,
+      pageSize,
+      pageToken,
+      q: `not trashed and '${'16x1_zXaMtbM9c3591wUNiM9qElT2zheb'}' in parents`
+    }
+  });
+};
+
+const addFile = async ({ filter, data }) => {
+  const { file } = data;
+  const note = await getOne({ filter });
+
+  const resource = {
+    name: file.originalname,
+    parents: [note.googleFolderId]
+  };
+
+  const media = {
+    mimeType: file.mimetype,
+    body: fs.createReadStream(file.path)
+  };
+
+  createFile({
+    config: {
+      resource,
+      media
+    }
+  });
+
+  fs.unlinkSync(file.path);
+
+  return file;
+};
 
 module.exports = {
   createOne,
@@ -341,6 +367,7 @@ module.exports = {
   addSaved,
   removeSaved,
   deleteOne,
-  updateOne
-  // addFile
+  updateOne,
+  getTheListOfNoteFiles,
+  addFile
 };
