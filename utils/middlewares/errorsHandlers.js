@@ -6,6 +6,8 @@ const { config } = require('../../config');
 function withErrorStack(err, stack) {
   if (config.dev) {
     return { ...err, stack }; // Object.assign({}, err, stack)
+  } else {
+    return { ...err };
   }
 }
 
@@ -15,7 +17,6 @@ function logErrors(err, req, res, next) {
 }
 
 function wrapErrors(err, req, res, next) {
-  console.log('wrap', err);
   if (!err.isBoom) {
     next(boom.badImplementation(err));
   }
