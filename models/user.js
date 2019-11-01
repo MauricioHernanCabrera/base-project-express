@@ -43,10 +43,10 @@ const UserSchema = Schema(
       required: true
     },
 
-    // avatar: {
-    //   type: String,
-    //   default: ''
-    // },
+    token: {
+      type: Object,
+      default: {}
+    },
 
     favorites: [
       {

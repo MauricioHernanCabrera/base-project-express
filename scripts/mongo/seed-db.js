@@ -30,7 +30,9 @@ const codeNotesData = [
   { name: 'Teoria' },
   { name: 'Resumen' },
   { name: 'Practico' },
-  { name: 'Ejercicios' }
+  { name: 'Ejercicios' },
+  { name: 'Modelo de parcial' },
+  { name: 'Modelo de final' }
 ];
 
 const usersData = [
@@ -39,11 +41,7 @@ const usersData = [
   { username: 'hola3', email: 'hola3@gmail.com', password: '123456789' }
 ];
 
-const institutionsData = [
-  { name: 'UNNE' },
-  { name: 'UTN' },
-  { name: 'Cuenca del Plata' }
-];
+const institutionsData = [{ name: 'UNNE' }];
 
 const subjectsData = [
   { name: 'Algoritmo I' },
@@ -74,22 +72,20 @@ const getRandomString = (length = 36) => {
     await CodeNoteModel.insertMany(codeNotesData);
     await UserModel.insertMany(usersData);
 
-    const institutionsPromises = institutionsData.map(institution => {
-      return InstitutionService.createOne({ data: institution });
+    const institution = await InstitutionService.createOne({
+      data: { name: 'UNNE' }
     });
 
-    const institutions = await Promise.all(institutionsPromises);
-
-    const subjectsPromises = institutions.map((institution, index) => {
+    const subjectPromises = subjectsData.map(({ name }) => {
       return InstitutionService.createSubject({
-        data: subjectsData[index],
-        filter: { _id: institution._id }
+        data: { name },
+        filter: { _id: String(institution._id) }
       });
     });
+    const subjects = await Promise.all(subjectPromises);
 
     const codeNotes = await CodeNoteModel.find({});
     const codeYears = await CodeYearModel.find({});
-    const subjects = await Promise.all(subjectsPromises);
     const users = await UserModel.find({});
 
     // const notesPromises = [];

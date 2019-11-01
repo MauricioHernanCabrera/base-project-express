@@ -2,7 +2,7 @@ const { google } = require('googleapis');
 const credentials = require('./../credentials.json');
 const token = require('./../token.json');
 
-const NAME_BASE_FOLDER = 'APUNTUS-FILES';
+const NAME_BASE_FOLDER = 'apuntus.com';
 const MIME_TYPE_FOLDER = 'application/vnd.google-apps.folder';
 const PERMISSION_ANYONE_READER = {
   type: 'anyone',

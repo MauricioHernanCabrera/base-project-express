@@ -1,7 +1,7 @@
 const fs = require('fs');
 const readline = require('readline');
 const { google } = require('googleapis');
-
+const REDIRECT_URL = 'http://localhost:3000' + '/auth/google_code';
 // If modifying these scopes, delete token.json.
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
 // The file token.json stores the user's access and refresh tokens, and is
@@ -28,6 +28,7 @@ function authorize(credentials, callback) {
     client_id,
     client_secret,
     redirect_uris[0]
+    // REDIRECT_URL
   );
 
   // Check if we have previously stored a token.

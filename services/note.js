@@ -353,9 +353,10 @@ const addFile = async ({ filter, data }) => {
       resource,
       media
     }
+  }).then(() => {
+    console.log('archivo eliminado');
+    fs.unlinkSync(file.path);
   });
-
-  fs.unlinkSync(file.path);
 
   return file;
 };

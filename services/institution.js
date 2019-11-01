@@ -25,7 +25,10 @@ const getSubjects = async ({ filter }) => {
     .orFail(boom.notFound('No se encontro la institución'))
     .populate({
       path: 'subjects',
-      select: ['name', 'nameSort', '_id']
+      select: ['name', 'nameSort', '_id'],
+      options: {
+        sort: { nameSort: 1 }
+      }
     });
 
   return institution.subjects;

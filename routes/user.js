@@ -5,7 +5,7 @@ const { UserService } = require('./../services');
 const passport = require('passport');
 const validation = require('./../utils/middlewares/validationHandler');
 const { BaseSchema, UserSchema } = require('./../utils/schemas');
-
+const boom = require('@hapi/boom');
 require('./../utils/auth/strategies/jwt');
 
 router.get(

@@ -1,6 +1,9 @@
 const UserService = require('./user');
 const { config } = require('./../config');
 const nodemailer = require('nodemailer');
+const boom = require('@hapi/boom');
+
+const gapi = require('./../utils/gapi2');
 
 const jwt = require('jsonwebtoken');
 const register = ({ data }) => {
@@ -98,10 +101,20 @@ const getToken = ({ data, req }) => {
   });
 };
 
+const getTokenGoogle = () => {
+  return gapi.getToken();
+};
+
+const setTokenGoogle = ({ data }) => {
+  return gapi.setToken(data.code);
+};
+
 module.exports = {
   register,
   createForgotPassword,
   getResetPasswordToken,
   createResetPasswordToken,
-  getToken
+  getToken,
+  getTokenGoogle,
+  setTokenGoogle
 };
