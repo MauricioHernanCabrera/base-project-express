@@ -71,7 +71,7 @@ app.use((req, res, next) => {
   // database connect
   await initDB();
   // server
-  // dequeueNotes();
+  dequeueNotes();
   const port = process.env.PORT || 3000;
 
   const server = app.listen(port, function() {
