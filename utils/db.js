@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 
 function initDB() {
   // const MONGO_URI = `mongodb://${config.dbHost}/${config.dbName}`;
-  const MONGO_URI = `mongodb://${config.dbUsername}:${config.dbPassword}@${config.dbHost}:${config.dbPort}/${config.dbName}`
+  const MONGO_URI = config.dbHerokuDb
   
   mongoose.set('useCreateIndex', true);
   return mongoose.connect(MONGO_URI, {

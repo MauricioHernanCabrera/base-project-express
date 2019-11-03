@@ -6,6 +6,7 @@ const config = {
   dbHost: process.env.DB_HOST,
   dbUsername: process.env.DB_USER,
   dbPassword: process.env.DB_PASSWORD,
+  dbHerokuDb: process.env.MONGODB_URI,
   dbName: process.env.DB_NAME,
   authAdminUsername: process.env.AUTH_ADMIN_USERNAME,
   authAdminPassword: process.env.AUTH_ADMIN_PASSWORD,
