@@ -3,16 +3,16 @@ const { NoteQueueModel, NoteModel } = require('./../models');
 const { createFile } = require('./gapi');
 
 const dequeueNotes = () => {
-  let inProcess = 0;
   let LIMIT_MAX = 10;
   let fails = 0;
   let recovers = 0;
   let finished = 0;
+  let deleteds = 0;
 
   setInterval(async () => {
-    const limit = LIMIT_MAX - inProcess;
+    const limit = LIMIT_MAX;
 
-    console.log({ inProcess, limit, fails, recovers, finished });
+    console.log({ limit, fails, recovers, finished, deleteds });
 
     if (limit >= 1) {
       const notesQueue = await NoteQueueModel.find({ isPending: true }).limit(
@@ -23,7 +23,6 @@ const dequeueNotes = () => {
 
       for (let i = 0; i < notesQueue.length; i++) {
         const item = notesQueue[i];
-        inProcess++;
         item.isPending = false;
 
         const resource = {
@@ -41,6 +40,7 @@ const dequeueNotes = () => {
           .then(({ data }) => {
             finished++;
             item.remove(() => {
+              deleteds++;
               // console.log('Eliminadisimo');
             });
 
@@ -55,15 +55,11 @@ const dequeueNotes = () => {
           })
           .catch(error => {
             fails++;
-            // console.log('fallo al crear!');
             item.isPending = true;
             item.save(() => {
               recovers++;
-              // console.log('Volvio a pendiente!');
             });
           });
-
-        inProcess--;
       }
 
       if (promises.length >= 1) {
@@ -74,7 +70,7 @@ const dequeueNotes = () => {
         }
       }
     }
-  }, 2000);
+  }, 3000);
 };
 
 module.exports = dequeueNotes;

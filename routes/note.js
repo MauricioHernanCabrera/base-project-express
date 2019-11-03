@@ -15,12 +15,13 @@ const upload = multer({
     },
     filename: function(req, file, cb) {
       const random = uuidv4();
-      const name = `${req.user._id}-${random}-${file.originalname}`;
+      const random2 = uuidv4();
+      const name = `${random2}-${req.user._id}-${random}-${file.originalname}`;
       cb(null, name);
     }
   }),
   limits: {
-    fileSize: 1024 * 1024 * 200
+    fileSize: 1024 * 1024 * 50
   }
 });
 

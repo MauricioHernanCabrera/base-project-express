@@ -319,7 +319,7 @@ const removeSaved = ({ filter }) => {
   });
 };
 
-const getTheListOfNoteFiles = async ({ filter }) => {
+const getTheListOfNoteFiles = async ({ filter, paginate }) => {
   return (await NoteModel.findById(filter._id)).files;
 };
 
