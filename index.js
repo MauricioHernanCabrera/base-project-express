@@ -72,8 +72,9 @@ app.use((req, res, next) => {
   await initDB();
   // server
   // dequeueNotes();
+  const port = process.env.PORT || 3000;
 
-  const server = app.listen(8000, function() {
+  const server = app.listen(port, function() {
     debug(`Listening http://localhost:${server.address().port}`);
   });
 })();
