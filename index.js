@@ -71,7 +71,7 @@ app.use((req, res, next) => {
   // database connect
   await initDB();
   // server
-  dequeueNotes();
+  // dequeueNotes();
 
   const server = app.listen(8000, function() {
     debug(`Listening http://localhost:${server.address().port}`);
