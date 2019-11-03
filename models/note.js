@@ -16,6 +16,18 @@ const UserMoreTimestampsSchema = Schema(
   { timestamps: true }
 );
 
+const FileSchema = Schema({
+  name: {
+    type: String,
+    required: true
+  },
+
+  webViewLink: {
+    type: String,
+    required: true
+  }
+});
+
 const NoteSchema = Schema(
   {
     isActive: {
@@ -72,6 +84,13 @@ const NoteSchema = Schema(
     saved: [
       {
         type: UserMoreTimestampsSchema,
+        default: []
+      }
+    ],
+
+    files: [
+      {
+        type: FileSchema,
         default: []
       }
     ]

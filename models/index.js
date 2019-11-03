@@ -4,6 +4,7 @@ const SubjectModel = require('./subject');
 const InstitutionModel = require('./institution');
 const UserModel = require('./user');
 const NoteModel = require('./note');
+const NoteQueueModel = require('./noteQueue');
 
 module.exports = {
   CodeYearModel,
@@ -11,5 +12,6 @@ module.exports = {
   SubjectModel,
   InstitutionModel,
   UserModel,
-  NoteModel
+  NoteModel,
+  NoteQueueModel
 };

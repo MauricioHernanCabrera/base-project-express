@@ -1,4 +1,4 @@
-const { NoteModel, UserModel } = require('./../models');
+const { NoteModel, UserModel, NoteQueueModel } = require('./../models');
 const CodeNoteService = require('./../services/codeNote');
 const CodeYearService = require('./../services/codeYear');
 const SubjectService = require('./../services/subject');
@@ -319,46 +319,32 @@ const removeSaved = ({ filter }) => {
   });
 };
 
-const getTheListOfNoteFiles = async ({ paginate, filter }) => {
-  const { pageSize = 12, pageToken } = paginate;
-
-  const note = await getOne({ filter });
-
-  return getFileList({
-    config: {
-      fields: `nextPageToken, files(id, name, webViewLink)`,
-      pageSize,
-      pageToken,
-      q: `not trashed and '${note.googleFolderId}' in parents`
-    }
-  });
+const getTheListOfNoteFiles = async ({ filter }) => {
+  return (await NoteModel.findById(filter._id)).files;
 };
 
-const addFile = async ({ filter, data }) => {
-  const { file } = data;
-  const note = await getOne({ filter });
+const addFile = ({ filter, data }) => {
+  return new Promise(async (res, rej) => {
+    const { file } = data;
 
-  const resource = {
-    name: file.originalname,
-    parents: [note.googleFolderId]
-  };
+    if (file && file.path && file.originalname && file.mimetype) {
+      const note = await getOne({ filter });
 
-  const media = {
-    mimeType: file.mimetype,
-    body: fs.createReadStream(file.path)
-  };
+      await NoteQueueModel.create({
+        googleFolderId: note.googleFolderId,
+        note: note._id,
+        file: {
+          path: file.path,
+          name: file.originalname,
+          mimeType: file.mimetype
+        }
+      });
 
-  await createFile({
-    config: {
-      resource,
-      media
+      res(file);
+    } else {
+      rej(boom.badRequest('¡El archivo es requerido!'));
     }
-  }).then(() => {
-    console.log('archivo eliminado');
-    fs.unlinkSync(file.path);
   });
-
-  return file;
 };
 
 module.exports = {

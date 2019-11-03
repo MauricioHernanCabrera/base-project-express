@@ -20,7 +20,7 @@ const upload = multer({
     }
   }),
   limits: {
-    fileSize: 1024 * 1024 * 100
+    fileSize: 1024 * 1024 * 200
   }
 });
 
@@ -235,27 +235,21 @@ router.post(
   }
 );
 
-router.get(
-  '/:_id/files',
-  // passport.authenticate('jwt', { session: false }),
-  async function(req, res, next) {
-    try {
-      const { pageSize, pageToken } = req.query;
-      const { _id } = req.params;
+router.get('/:_id/files', async function(req, res, next) {
+  try {
+    const { _id } = req.params;
 
-      const data = await NoteService.getTheListOfNoteFiles({
-        paginate: { pageSize, pageToken },
-        filter: { _id }
-      });
+    const data = await NoteService.getTheListOfNoteFiles({
+      filter: { _id }
+    });
 
-      res.status(200).json({
-        data,
-        message: '¡Archivos recuperados!'
-      });
-    } catch (error) {
-      next(error);
-    }
+    res.status(200).json({
+      data,
+      message: '¡Archivos recuperados!'
+    });
+  } catch (error) {
+    next(error);
   }
-);
+});
 
 module.exports = router;

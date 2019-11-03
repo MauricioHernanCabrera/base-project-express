@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const debug = require('debug')('app:server');
 
+const dequeueNotes = require('./utils/dequeueNotes');
 const boom = require('@hapi/boom');
 const { initDB } = require('./utils/db');
 const {
@@ -58,7 +59,7 @@ app.use(wrapErrors);
 app.use(clientErrorHandler);
 
 // not found
-app.use(function(req, res, next) {
+app.use((req, res, next) => {
   const {
     output: { statusCode, payload }
   } = boom.notFound();
@@ -70,6 +71,8 @@ app.use(function(req, res, next) {
   // database connect
   await initDB();
   // server
+  dequeueNotes();
+
   const server = app.listen(8000, function() {
     debug(`Listening http://localhost:${server.address().port}`);
   });
