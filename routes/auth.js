@@ -117,36 +117,4 @@ router.post(
   }
 );
 
-router.get(
-  '/gapi_token',
-  passport.authenticate('jwt', { session: false }),
-  async function(req, res, next) {
-    const url = await AuthService.getTokenGoogle();
-
-    res.status(301).json({
-      data: url,
-      message: 'Redirección'
-    });
-  }
-);
-
-router.post(
-  '/gapi_token',
-  passport.authenticate('jwt', { session: false }),
-  async function(req, res, next) {
-    try {
-      const { code } = req.body;
-
-      const data = await AuthService.setTokenGoogle({ data: { code } });
-
-      res.status(201).json({
-        data,
-        message: 'Token cargado'
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
 module.exports = router;

@@ -327,7 +327,7 @@ const addFile = ({ filter, data }) => {
   return new Promise(async (res, rej) => {
     const { file } = data;
 
-    if (file && file.path && file.originalname && file.mimetype) {
+    if (file && file.path) {
       const note = await getOne({ filter });
 
       await NoteQueueModel.create({

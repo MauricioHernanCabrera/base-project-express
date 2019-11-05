@@ -101,20 +101,10 @@ const getToken = ({ data, req }) => {
   });
 };
 
-const getTokenGoogle = () => {
-  return gapi.getToken();
-};
-
-const setTokenGoogle = ({ data }) => {
-  return gapi.setToken(data.code);
-};
-
 module.exports = {
   register,
   createForgotPassword,
   getResetPasswordToken,
   createResetPasswordToken,
-  getToken,
-  getTokenGoogle,
-  setTokenGoogle
+  getToken
 };
