@@ -23,7 +23,7 @@ const codeYearsData = [
   { name: '2002 / 2003' },
   { name: '2001 / 2002' },
   { name: '2000 / 2001' },
-  { name: 'viejisimo' }
+  { name: '-2000' }
 ];
 
 const codeNotesData = [

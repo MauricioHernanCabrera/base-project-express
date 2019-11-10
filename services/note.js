@@ -103,6 +103,7 @@ const getAll = async ({ filter, paginate, sort = '' }) => {
   const customFilter = {};
   if (filter._id) customFilter['_id'] = ObjectId(filter._id);
   if (filter.codeNote) customFilter['codeNote'] = ObjectId(filter.codeNote);
+  if (filter.owner) customFilter['owner'] = ObjectId(filter.owner);
   if (filter.codeYear) customFilter['codeYear'] = ObjectId(filter.codeYear);
   if (filter.subject) customFilter['subject._id'] = ObjectId(filter.subject);
   if (filter.institution)

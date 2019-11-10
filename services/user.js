@@ -1,6 +1,8 @@
 const { UserModel, NoteModel } = require('./../models');
 const bcrypt = require('bcrypt');
 const boom = require('@hapi/boom');
+const mongoose = require('mongoose');
+const { ObjectId } = mongoose.Types;
 
 const getOne = ({
   filter,
@@ -33,53 +35,61 @@ const updateOne = async ({ filter, data }) => {
 };
 
 const getNoteList = async ({ filter, paginate }) => {
+  console.log({ filter, paginate });
   const limit = 12;
+
   const notesOfTheUser = await UserModel.findOne({
     isActive: true,
     _id: filter._id
   })
     .select(filter.noteName)
+    .populate(`${filter.noteName}.note`)
     .orFail(boom.notFound('¡No existe el usuario!'));
 
-  const notesSorted = notesOfTheUser[filter.noteName]
+  const notesPopulates = await NoteModel.populate(
+    notesOfTheUser[filter.noteName],
+    [
+      {
+        path: 'note',
+        select: '-favorites -saved',
+        populate: [
+          {
+            path: 'codeYear'
+          },
+          {
+            path: 'codeNote'
+          },
+          {
+            path: 'subject',
+            populate: {
+              path: 'institution',
+              select: '-subjects -nameSort -createdAt -updatedAt'
+            }
+          },
+          {
+            path: 'owner',
+            select: ['email', 'username', '_id']
+          }
+        ]
+      }
+    ]
+  );
+
+  const notesActives = notesPopulates.filter(({ note }) => note.isActive);
+
+  const notesSorted = notesActives
     .slice()
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   const skip = paginate.page == 0 ? 0 : paginate.page * limit;
   const notesPaginated = notesSorted.slice(skip, skip + limit);
 
-  const notesPopulates = await NoteModel.populate(notesPaginated, [
-    {
-      path: 'note',
-      select: '-favorites -saved',
-      populate: [
-        {
-          path: 'codeYear'
-        },
-        {
-          path: 'codeNote'
-        },
-        {
-          path: 'subject',
-          populate: {
-            path: 'institution',
-            select: '-subjects -nameSort -createdAt -updatedAt'
-          }
-        },
-        {
-          path: 'owner',
-          select: ['email', 'username', '_id']
-        }
-      ]
-    }
-  ]);
-
   const data = {};
 
-  data.total = notesSorted.length;
-  if (notesPopulates.length == limit) data.nextPage = paginate.page + 1;
+  data.total = notesPaginated.length;
+  if (notesPaginated.length == limit) data.nextPage = paginate.page + 1;
 
-  data.array = [...notesPopulates]
+  data.array = [...notesPaginated]
     .filter(({ note }) => (note ? true : false))
     .map(({ note, createdAt, updatedAt }) => ({
       ...note._doc,

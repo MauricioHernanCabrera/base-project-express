@@ -9,6 +9,8 @@ const dequeueNotes = () => {
   let finished = 0;
   let deleteds = 0;
 
+  console.log('inicio');
+
   setInterval(async () => {
     const limit = LIMIT_MAX;
 
