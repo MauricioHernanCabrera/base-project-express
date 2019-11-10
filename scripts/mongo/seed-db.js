@@ -28,41 +28,37 @@ const codeYearsData = [
 
 const codeNotesData = [
   { name: 'Teoria' },
-  { name: 'Resumen' },
   { name: 'Practico' },
-  { name: 'Ejercicios' },
+  { name: 'Resumen' },
+  { name: 'Ejercicios resueltos' },
   { name: 'Modelo de parcial' },
   { name: 'Modelo de final' }
 ];
 
-const usersData = [
-  { username: 'hola', email: 'hola@gmail.com', password: '123456789' },
-  { username: 'hola2', email: 'hola2@gmail.com', password: '123456789' },
-  { username: 'hola3', email: 'hola3@gmail.com', password: '123456789' }
-];
+// const usersData = [
+//   { username: 'hola', email: 'hola@gmail.com', password: '123456789' },
+//   { username: 'hola2', email: 'hola2@gmail.com', password: '123456789' },
+//   { username: 'hola3', email: 'hola3@gmail.com', password: '123456789' }
+// ];
 
 const institutionsData = [{ name: 'UNNE' }];
 
-const subjectsData = [
-  { name: 'Algoritmo I' },
-  { name: 'Algebra' },
-  { name: 'Paradigma' }
-];
+const subjectsData = require('./materias_unne_ordenadas.json');
 
-const getRandomInt = (min, max) => {
-  return Math.floor(Math.random() * (max - min)) + min;
-};
+// const getRandomInt = (min, max) => {
+//   return Math.floor(Math.random() * (max - min)) + min;
+// };
 
-const getRandomString = (length = 36) => {
-  var result = '';
-  var characters =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  var charactersLength = characters.length;
-  for (var i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-  return result;
-};
+// const getRandomString = (length = 36) => {
+//   var result = '';
+//   var characters =
+//     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+//   var charactersLength = characters.length;
+//   for (var i = 0; i < length; i++) {
+//     result += characters.charAt(Math.floor(Math.random() * charactersLength));
+//   }
+//   return result;
+// };
 
 (async function() {
   try {
@@ -70,20 +66,20 @@ const getRandomString = (length = 36) => {
 
     await CodeYearModel.insertMany(codeYearsData);
     await CodeNoteModel.insertMany(codeNotesData);
-    await UserModel.insertMany(usersData);
+    // await UserModel.insertMany(usersData);
 
     const institution = await InstitutionService.createOne({
       data: { name: 'UNNE' }
     });
 
-    const subjectPromises = subjectsData.map(({ name }) => {
-      return InstitutionService.createSubject({
+    const subjectPromises = subjectsData.map(name =>
+      InstitutionService.createSubject({
         data: { name },
         filter: { _id: String(institution._id) }
-      });
-    });
-    const subjects = await Promise.all(subjectPromises);
+      })
+    );
 
+    const subjects = await Promise.all(subjectPromises);
     const codeNotes = await CodeNoteModel.find({});
     const codeYears = await CodeYearModel.find({});
     const users = await UserModel.find({});

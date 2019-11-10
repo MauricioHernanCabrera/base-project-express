@@ -1,4 +1,4 @@
-const { initDB } = require('./../../utils/db');
+const { initDB } = require('../../../utils/db');
 
 (async function() {
   const conn = await initDB();
