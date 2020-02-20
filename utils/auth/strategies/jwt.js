@@ -9,17 +9,16 @@ passport.use(
   new Strategy(
     {
       secretOrKey: config.authJwtSecret,
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken()
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
     },
-    async function(tokenPayload, cb) {
+    async (tokenPayload, cb) => {
+      console.log('Hola')
       try {
-        const filter = { username: tokenPayload.sub };
+        const filter = { username: tokenPayload.username };
+
         const user = await UserService.getOne({
           filter,
           select: [
-            '-favorites',
-            '-saved',
-            '-created',
             '-password',
             '-resetPasswordExpires',
             '-resetPasswordToken'

@@ -4,21 +4,21 @@ const router = express();
 const passport = require('passport');
 const boom = require('@hapi/boom');
 
-const validation = require('./../utils/middlewares/validationHandler');
+const { validationMiddleware } = require('./../utils/middlewares/validationHandler');
 
 const { AuthSchema } = require('./../utils/schemas');
 const { AuthService } = require('./../services');
 
 // Basic strategy
 require('./../utils/auth/strategies/basic');
+
 // JWT
 require('./../utils/auth/strategies/jwt');
-require('./../utils/auth/strategies/facebook-token');
 
 router.post(
   '/register',
-  validation(AuthSchema.register), // prettier-ignore
-  async function(req, res, next) {
+  validationMiddleware(AuthSchema.register), // prettier-ignore
+  async (req, res, next) => {
     try {
       const { body: data } = req;
 
@@ -33,8 +33,8 @@ router.post(
   }
 );
 
-router.get('/token', function(req, res, next) {
-  passport.authenticate('basic', async function(error, user) {
+router.get('/token', (req, res, next) => {
+  passport.authenticate('basic', async (error, user) => {
     try {
       if (error || !user) {
         next(boom.badRequest('¡Nombre de usuario o contraseña incorrecto!'));
@@ -54,16 +54,16 @@ router.get('/token', function(req, res, next) {
 
 router.get(
   '/verify',
-  passport.authenticate('jwt', { session: false }),
-  function(req, res, next) {
+  passport.authenticate('jwt', { session: false, }),
+  (req, res, next) => {
     res.status(200).json({ message: '¡El token es valido!' });
   }
 );
 
 router.post(
   '/forgot',
-  validation(AuthSchema.forgot), // prettier-ignore
-  async function(req, res, next) {
+  validationMiddleware(AuthSchema.forgot), // prettier-ignore
+  async (req, res, next) => {
     try {
       const { email } = req.body;
 
@@ -78,7 +78,7 @@ router.post(
   }
 );
 
-router.get('/reset/:resetPasswordToken', async function(req, res, next) {
+router.get('/reset/:resetPasswordToken', async (req, res, next) => {
   try {
     const { resetPasswordToken } = req.params;
 
@@ -97,8 +97,8 @@ router.get('/reset/:resetPasswordToken', async function(req, res, next) {
 
 router.post(
   '/reset/:resetPasswordToken',
-  validation(AuthSchema.reset),
-  async function(req, res, next) {
+  validationMiddleware(AuthSchema.reset),
+  async (req, res, next) => {
     try {
       const { resetPasswordToken } = req.params;
       const { password } = req.body;

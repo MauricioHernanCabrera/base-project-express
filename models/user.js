@@ -1,33 +1,13 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
-const { ObjectId } = Schema.Types;
 const uniqueValidator = require('mongoose-unique-validator');
 const handleUniqueValidator = require('./../utils/handleUniqueValidator');
-
-const NoteMoreTimestampsSchema = Schema(
-  {
-    note: {
-      type: ObjectId,
-      ref: 'Notes',
-      required: true
-    }
-  },
-  { timestamps: true }
-);
 
 const UserSchema = Schema(
   {
     isActive: {
       type: Boolean,
       default: true
-    },
-
-    username: {
-      type: String,
-      unique: true,
-      index: true,
-      uniqueCaseInsensitive: true,
-      required: true
     },
 
     email: {
@@ -43,31 +23,11 @@ const UserSchema = Schema(
       required: true
     },
 
-    token: {
-      type: Object,
-      default: {}
+    role: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'user'
     },
-
-    favorites: [
-      {
-        type: NoteMoreTimestampsSchema,
-        default: []
-      }
-    ],
-
-    saved: [
-      {
-        type: NoteMoreTimestampsSchema,
-        default: []
-      }
-    ],
-
-    created: [
-      {
-        type: NoteMoreTimestampsSchema,
-        default: []
-      }
-    ],
 
     resetPasswordToken: { type: String, default: '' },
 

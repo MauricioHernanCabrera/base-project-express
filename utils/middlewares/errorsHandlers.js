@@ -3,7 +3,7 @@ const debug = require('debug')('app:error');
 
 const { config } = require('../../config');
 
-function withErrorStack(err, stack) {
+const withErrorStack = (err, stack) => {
   if (config.dev) {
     return { ...err, stack }; // Object.assign({}, err, stack)
   } else {
@@ -11,12 +11,12 @@ function withErrorStack(err, stack) {
   }
 }
 
-function logErrors(err, req, res, next) {
+const logErrors = (err, req, res, next) => {
   console.log('log', err);
   next(err);
 }
 
-function wrapErrors(err, req, res, next) {
+const wrapErrors = (err, req, res, next) => {
   if (!err.isBoom) {
     next(boom.badImplementation(err));
   }
@@ -24,7 +24,7 @@ function wrapErrors(err, req, res, next) {
   next(err);
 }
 
-function clientErrorHandler(err, req, res, next) {
+const clientErrorHandler = (err, req, res, next) => {
   const {
     output: { statusCode, payload }
   } = err;
@@ -32,8 +32,18 @@ function clientErrorHandler(err, req, res, next) {
   res.status(statusCode).json(withErrorStack(payload, err.stack));
 }
 
+const notFound = (req, res, next) => {
+  const {
+    output: { statusCode, payload }
+  } = boom.notFound();
+
+  res.status(statusCode).json(payload);
+}
+
+
 module.exports = {
   logErrors,
   wrapErrors,
-  clientErrorHandler
+  clientErrorHandler,
+  notFound
 };
